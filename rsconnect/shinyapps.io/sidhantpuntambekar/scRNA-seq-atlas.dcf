@@ -1,0 +1,12 @@
+name: scRNA-seq-atlas
+title: scRNA-seq-atlas
+username:
+account: sidhantpuntambekar
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 2890325
+bundleId: 3671701
+url: https://sidhantpuntambekar.shinyapps.io/scRNA-seq-atlas/
+when: 1601067752.08105
+asMultiple: FALSE
+asStatic: FALSE
