@@ -116,7 +116,7 @@ server <- function(input, output) {
         }
     )
     
-    output$file2Contents <- renderTable({
+    output$contents <- renderTable({
         file <- input$file2    
         fileTypeFile2 <- tools::file_ext(file$datapath)
         req(file)
