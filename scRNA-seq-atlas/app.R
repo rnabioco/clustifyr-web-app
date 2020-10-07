@@ -153,11 +153,11 @@ server <- function(input, output) {
         req(input$file2)
         fileTypeFile1 <- file_ext(input$file1)
         fileTypeFile2 <- file_ext(input$file2)
-        df1 <- read.csv(input$file1$datapath,
+        df1 <- read_csv(input$file1$datapath,
                         header = input$header,
                         sep = input$sep,
                         quote = input$quote)
-        df2 <- read.csv(input$file2$datapath,
+        df2 <- read_csv(input$file2$datapath,
                         header = input$header,
                         sep = input$sep,
                         quote = input$quote)
