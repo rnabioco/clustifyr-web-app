@@ -90,7 +90,7 @@ server <- function(input, output) {
         # having a comma separator causes `read.csv` to error
             if (fileTypeFile1 == "csv")
             {
-                df1 <- read.csv(file$datapath,
+                df1 <- read_csv(file$datapath,
                                 header = input$header,
                                 sep = input$sep,
                                 quote = input$quote)
@@ -122,7 +122,7 @@ server <- function(input, output) {
         req(file)
         if (fileTypeFile2 == "csv")
         {
-            df2 <- read.csv(file$datapath,
+            df2 <- read_csv(file$datapath,
                             header = input$header,
                             sep = input$sep,
                             quote = input$quote)
