@@ -36,5 +36,5 @@ mat <- as.data.frame(mat) %>%
   rownames_to_column("gene")
 mdata <- mdata %>% rownames_to_column("cell")
 
-write.csv(mat, here("data", "lung-data", "matrix.csv"))
-write.csv(mdata, here("data", "lung-data", "meta-data.csv"))
+write_csv(mat, here("data", "lung-data", "matrix.csv"))
+write_csv(mdata, here("data", "lung-data", "meta-data.csv"))
