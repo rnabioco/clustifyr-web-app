@@ -119,13 +119,13 @@ server <- function(input, output) {
         }
     )
     
-    output$cotents2 <- renderTable({
+    output$contents2 <- renderTable({
         file <- input$file2    
         fileTypeFile2 <- tools::file_ext(file$datapath)
         req(file)
         if (fileTypeFile2 == "csv")
         {
-            df2 <- read_csv(file$datapath,
+            df2 <- read.csv(file$datapath,
                             header = input$header,
                             sep = input$sep,
                             quote = input$quote)
@@ -216,7 +216,7 @@ server <- function(input, output) {
                         header = input$header,
                         sep = input$sep,
                         quote = input$quote)
-        reference_matrix <- average_clusters(mat = date1(), metadata = data2()$cellCol, if_log = TRUE)
+        reference_matrix <- average_clusters(mat = data1(), metadata = data2()$cellCol, if_log = TRUE)
         head(reference_matrix)
     })
     
