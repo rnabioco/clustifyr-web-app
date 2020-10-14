@@ -53,7 +53,9 @@ ui <- fluidPage(
             
             # Input: Select separator ----
             radioButtons("sep", "Separator",
-                         choices = c(Tab = "\t"),
+                         choices = c(Comma = ",",
+                                     Semicolon = ";",
+                                     Tab = "\t"),
                          selected = ","),
             
             # Input: Select number of rows to display ----
@@ -68,8 +70,9 @@ ui <- fluidPage(
         mainPanel(
             
             # Output: Data file ----
-            tableOutput("contents")
-            
+            tableOutput("contents1"),
+            tags$hr(),
+            tableOutput("contents2")
         )
         
     )
@@ -78,7 +81,7 @@ ui <- fluidPage(
 # Define server logic to read selected file ----
 server <- function(input, output) {
     
-    output$contents <- renderTable({
+    output$contents1 <- renderTable({
         
         # input$file1 will be NULL initially. After the user selects
         # and uploads a file, head of that data file by default,
@@ -116,13 +119,13 @@ server <- function(input, output) {
         }
     )
     
-    output$file2Contents <- renderTable({
+    output$cotents2 <- renderTable({
         file <- input$file2    
         fileTypeFile2 <- tools::file_ext(file$datapath)
         req(file)
         if (fileTypeFile2 == "csv")
         {
-            df2 <- read.csv(file$datapath,
+            df2 <- read_csv(file$datapath,
                             header = input$header,
                             sep = input$sep,
                             quote = input$quote)
@@ -147,21 +150,73 @@ server <- function(input, output) {
         }
     }
 )
+    
+    data1 <- reactive({
+        
+        # input$file1 will be NULL initially. After the user selects
+        # and uploads a file, head of that data file by default,
+        # or all rows if selected, will be shown.
+        file <- input$file1
+        fileTypeFile1 <- tools::file_ext(file$datapath)
+        req(file)
+        # when reading semicolon separated files,
+        # having a comma separator causes `read.csv` to error
+        if (fileTypeFile1 == "csv")
+        {
+            df1 <- read_csv(file$datapath,
+                            header = input$header,
+                            sep = input$sep,
+                            quote = input$quote)
+        }
+        else if (fileTypeFile1 == "tsv")
+        {
+            df1 <- read_tsv(file$datapath,
+                            header = input$header,
+                            quote = input$quote)
+        }
+        else
+        {
+            df1 <- load(file$datapath)
+        }
+    })
+    
+    data2 <- reactive({
+        file <- input$file2    
+        fileTypeFile2 <- tools::file_ext(file$datapath)
+        req(file)
+        if (fileTypeFile2 == "csv")
+        {
+            df2 <- read_csv(file$datapath,
+                            header = input$header,
+                            sep = input$sep,
+                            quote = input$quote)
+        }
+        else if (fileTypeFile2 == "tsv")
+        {
+            df2 <- read_tsv(file$datapath,
+                            header = input$header,
+                            quote = input$quote)   
+        }
+        else
+        {
+            df2 <- load(file$datapath)
+        }
+    })
         
     output$reference <- renderTable({
         req(input$file1)
         req(input$file2)
         fileTypeFile1 <- file_ext(input$file1)
         fileTypeFile2 <- file_ext(input$file2)
-        df1 <- read.csv(input$file1$datapath,
+        df1 <- read_csv(input$file1$datapath,
                         header = input$header,
                         sep = input$sep,
                         quote = input$quote)
-        df2 <- read.csv(input$file2$datapath,
+        df2 <- read_csv(input$file2$datapath,
                         header = input$header,
                         sep = input$sep,
                         quote = input$quote)
-        reference_matrix <- average_clusters(mat = df1, metadata = df2$cellCol, if_log = TRUE)
+        reference_matrix <- average_clusters(mat = date1(), metadata = data2()$cellCol, if_log = TRUE)
         head(reference_matrix)
     })
     
