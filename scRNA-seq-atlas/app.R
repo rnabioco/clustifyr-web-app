@@ -62,7 +62,9 @@ ui <- fluidPage(
             radioButtons("disp", "Display",
                          choices = c(Head = "head",
                                      All = "all"),
-                         selected = "head")
+                         selected = "head"),
+            
+            textInput("metadataCellType", label = h3("Metadata Cell Type"), placeholder = "Enter metadata cell type column")
             
         ),
         
@@ -72,7 +74,9 @@ ui <- fluidPage(
             # Output: Data file ----
             tableOutput("contents1"),
             tags$hr(),
-            tableOutput("contents2")
+            tableOutput("contents2"),
+            tags$hr(),
+            tableOutput("reference")
         )
         
     )
@@ -111,7 +115,7 @@ server <- function(input, output) {
                 
             #file 1
             if(input$disp == "head") {
-                return(head(df1))
+                return(head(df1, col = 5))
             }
             else {
                 return(df1)
@@ -163,7 +167,7 @@ server <- function(input, output) {
         # having a comma separator causes `read.csv` to error
         if (fileTypeFile1 == "csv")
         {
-            df1 <- read_csv(file$datapath,
+            df1 <- read.csv(file$datapath,
                             header = input$header,
                             sep = input$sep,
                             quote = input$quote)
@@ -186,7 +190,7 @@ server <- function(input, output) {
         req(file)
         if (fileTypeFile2 == "csv")
         {
-            df2 <- read_csv(file$datapath,
+            df2 <- read.csv(file$datapath,
                             header = input$header,
                             sep = input$sep,
                             quote = input$quote)
@@ -204,19 +208,19 @@ server <- function(input, output) {
     })
         
     output$reference <- renderTable({
-        req(input$file1)
-        req(input$file2)
-        fileTypeFile1 <- file_ext(input$file1)
-        fileTypeFile2 <- file_ext(input$file2)
-        df1 <- read_csv(input$file1$datapath,
-                        header = input$header,
-                        sep = input$sep,
-                        quote = input$quote)
-        df2 <- read_csv(input$file2$datapath,
-                        header = input$header,
-                        sep = input$sep,
-                        quote = input$quote)
-        reference_matrix <- average_clusters(mat = data1(), metadata = data2()$cellCol, if_log = TRUE)
+        #req(input$file1)
+        #req(input$file2)
+        #fileTypeFile1 <- file_ext(input$file1)
+        #fileTypeFile2 <- file_ext(input$file2)
+        #df1 <- read_csv(input$file1$datapath,
+         #               header = input$header,
+          #              sep = input$sep,
+           #             quote = input$quote)
+        #df2 <- read_csv(input$file2$datapath,
+          #              header = input$header,
+         #               sep = input$sep,
+           #             quote = input$quote)
+        reference_matrix <- average_clusters(mat = data1(), metadata = data2()[[input$metadataCellType]], if_log = TRUE)
         head(reference_matrix)
     })
     
