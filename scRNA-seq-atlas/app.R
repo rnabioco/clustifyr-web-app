@@ -101,12 +101,16 @@ server <- function(input, output) {
                                 header = input$header,
                                 sep = input$sep,
                                 quote = input$quote)
+                rownames(df1) <- df1[, 1]
+                df1[, 1] <- NULL
             }
             else if (fileTypeFile1 == "tsv")
             {
                 df1 <- read_tsv(file$datapath,
                                 header = input$header,
                                 quote = input$quote)
+                rownames(df1) <- df1[, 1]
+                df1[, 1] <- NULL
             }
             else
             {
@@ -171,17 +175,22 @@ server <- function(input, output) {
                             header = input$header,
                             sep = input$sep,
                             quote = input$quote)
+            rownames(df1) <- df1[, 1]
+            df1[, 1] <- NULL
         }
         else if (fileTypeFile1 == "tsv")
         {
             df1 <- read_tsv(file$datapath,
                             header = input$header,
                             quote = input$quote)
+            rownames(df1) <- df1[, 1]
+            df1[, 1] <- NULL
         }
         else
         {
             df1 <- load(file$datapath)
         }
+        df1
     })
     
     data2 <- reactive({
@@ -194,17 +203,19 @@ server <- function(input, output) {
                             header = input$header,
                             sep = input$sep,
                             quote = input$quote)
+            
         }
         else if (fileTypeFile2 == "tsv")
         {
             df2 <- read_tsv(file$datapath,
                             header = input$header,
-                            quote = input$quote)   
+                            quote = input$quote) 
         }
         else
         {
             df2 <- load(file$datapath)
         }
+        df2
     })
         
     output$reference <- renderTable({
