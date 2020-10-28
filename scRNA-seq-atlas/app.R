@@ -85,7 +85,8 @@ ui <- fluidPage(
             tags$hr(),
             tableOutput("contents2"),
             tags$hr(),
-            tableOutput("reference")
+            tableOutput("reference"),
+            tableOutput("clustify")
         )
         
     )
@@ -244,10 +245,22 @@ server <- function(input, output) {
         head(reference_matrix)
     })
     
-    #eh <- ExperimentHub()
-    ## query
-    #refs <- query(eh, "clustifyrdatahub")
-    #refs
+    output$clustify <- renderTable({
+        #eh <- ExperimentHub()
+        ## query
+        #refs <- query(eh, "clustifyrdatahub")
+        #refs
+        #refs <- listResources(eh, "clustifyrdatahub")
+        #benchmarkRef <- loadResources(eh, "clustifyrdatahub", input$dataHubReference)[[1]]
+        
+        ## use for classification of cell types
+        #res <- clustify(
+        #    input = data1(),
+        #    metadata = data2()[[input$metadataCellType]],
+        #    ref_mat = benchmarkRef,
+        #    query_genes = pbmc_vargenes
+        #)
+    })
     
 }
 
