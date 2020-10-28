@@ -4,6 +4,7 @@ library(readr)
 library(tools)
 library(clustifyr)
 library(rsconnect)
+#library(ExperimentHub)
 options(shiny.maxRequestSize = 1500*1024^2)
 options(repos = BiocManager::repositories())
 options(shiny.reactlog = TRUE)
@@ -64,7 +65,15 @@ ui <- fluidPage(
                                      All = "all"),
                          selected = "head"),
             
-            textInput("metadataCellType", label = h3("Metadata Cell Type"), placeholder = "Enter metadata cell type column")
+            textInput("metadataCellType", label = h3("Metadata Cell Type"), placeholder = "Enter metadata cell type column"),
+            
+            selectInput("dataHubReference", "ClustifyrDataHub Reference:", 
+                        choices=list("ref_MCA","ref_tabula_muris_drop","ref_tabula_muris_facs",
+                        "ref_mouse.rnaseq", "ref_moca_main", "ref_immgen", "ref_hema_microarray",
+                        "ref_cortex_dev", "ref_pan_indrop", "ref_pan_smartseq2", 
+                        "ref_mouse_atlas")),
+            hr(),
+            helpText("Choose cell reference for clustify function")
             
         ),
         
@@ -76,7 +85,8 @@ ui <- fluidPage(
             tags$hr(),
             tableOutput("contents2"),
             tags$hr(),
-            tableOutput("reference")
+            tableOutput("reference"),
+            tableOutput("clustify")
         )
         
     )
@@ -233,6 +243,23 @@ server <- function(input, output) {
            #             quote = input$quote)
         reference_matrix <- average_clusters(mat = data1(), metadata = data2()[[input$metadataCellType]], if_log = TRUE)
         head(reference_matrix)
+    })
+    
+    output$clustify <- renderTable({
+        #eh <- ExperimentHub()
+        ## query
+        #refs <- query(eh, "clustifyrdatahub")
+        #refs
+        #refs <- listResources(eh, "clustifyrdatahub")
+        #benchmarkRef <- loadResources(eh, "clustifyrdatahub", input$dataHubReference)[[1]]
+        
+        ## use for classification of cell types
+        #res <- clustify(
+        #    input = data1(),
+        #    metadata = data2()[[input$metadataCellType]],
+        #    ref_mat = benchmarkRef,
+        #    query_genes = pbmc_vargenes
+        #)
     })
     
 }
