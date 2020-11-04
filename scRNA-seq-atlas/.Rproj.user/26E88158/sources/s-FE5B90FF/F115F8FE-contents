@@ -66,7 +66,12 @@ ui <- fluidPage(
                                      All = "all"),
                          selected = "head"),
             
-            textInput("metadataCellType", label = h3("Metadata Cell Type"), placeholder = "Enter metadata cell type column"),
+            selectInput("metadataCellType", "Cell Type Metadata Column:",
+                        choice=list("")
+                        ),
+            
+            hr(),
+            helpText("Choose cell type metadata column for average_clusters function"),
             
             selectInput("dataHubReference", "ClustifyrDataHub Reference:", 
                         choices=list("ref_MCA","ref_tabula_muris_drop","ref_tabula_muris_facs",
@@ -95,7 +100,7 @@ ui <- fluidPage(
 )
 
 # Define server logic to read selected file ----
-server <- function(input, output) {
+server <- function(input, output, session) {
     
     output$contents1 <- renderTable({
         
@@ -225,6 +230,9 @@ server <- function(input, output) {
         {
             df2 <- load(file$datapath)
         }
+        updateSelectInput(session, "metadataCellType",
+                          choices = colnames(df2)
+        )
         df2
     })
         
@@ -241,7 +249,7 @@ server <- function(input, output) {
           #              header = input$header,
          #               sep = input$sep,
            #             quote = input$quote)
-        reference_matrix <- average_clusters(mat = data1(), metadata = data2()[[input$metadataCellType]], if_log = TRUE)
+        reference_matrix <- average_clusters(mat = data1(), metadata = data2()[[input$metadataCellType]], if_log = FALSE)
         head(reference_matrix)
     })
     
@@ -253,21 +261,23 @@ server <- function(input, output) {
         eh <- ExperimentHub()
         # query
         refs <- query(eh, "clustifyrdatahub")
-        refs
-        refs <- listResources(eh, "clustifyrdatahub")
+        #refs <- listResources(eh, "clustifyrdatahub")
         benchmarkRef <- loadResources(eh, "clustifyrdatahub", input$dataHubReference)[[1]]
         
         UMIMatrix <- data1()
-        matrixSeuratObject <- CreateSeuratObject(counts = UMIMatrix, project = "Seurat object matrix", min.cells = 3, min.features = 200) 
-        inputVarGenes <- FindVariableFeatures(matrixSeuratObject, selection.method = "vst", nfeatures = 2000)
+        matrixSeuratObject <- CreateSeuratObject(counts = UMIMatrix, project = "Seurat object matrix", min.cells = 0, min.features = 0) 
+        matrixSeuratObject <- NormalizeData(matrixSeuratObject)
+        matrixSeuratObject <- FindVariableFeatures(matrixSeuratObject, selection.method = "vst", nfeatures = 2000)
         
+        metadataCol <- data2()[[input$metadataCellType]]
         # use for classification of cell types
         res <- clustify(
-            input = data1(),
-            metadata = data2()[[input$metadataCellType]],
+            input = matrixSeuratObject@assays$RNA@data, 
+            metadata = metadataCol,
             ref_mat = benchmarkRef,
-            query_genes = inputVarGenes
+            query_genes = VariableFeatures(matrixSeuratObject)
         )
+        head(res)
     })
     #Make plots such as heat maps to compare benchmarking with clustify with actual cell types
 }
