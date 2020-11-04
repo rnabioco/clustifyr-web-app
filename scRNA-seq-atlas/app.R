@@ -66,7 +66,12 @@ ui <- fluidPage(
                                      All = "all"),
                          selected = "head"),
             
-            textInput("metadataCellType", label = h3("Metadata Cell Type"), placeholder = "Enter metadata cell type column"),
+            selectInput("metadataCellType", "Cell Type Metadata Column:",
+                        choice=list("")
+                        ),
+            
+            hr(),
+            helpText("Choose cell type metadata column for average_clusters function"),
             
             selectInput("dataHubReference", "ClustifyrDataHub Reference:", 
                         choices=list("ref_MCA","ref_tabula_muris_drop","ref_tabula_muris_facs",
@@ -95,7 +100,7 @@ ui <- fluidPage(
 )
 
 # Define server logic to read selected file ----
-server <- function(input, output) {
+server <- function(input, output, session) {
     
     output$contents1 <- renderTable({
         
@@ -225,6 +230,9 @@ server <- function(input, output) {
         {
             df2 <- load(file$datapath)
         }
+        updateSelectInput(session, "metadataCellType",
+                          choices = colnames(df2)
+        )
         df2
     })
         
