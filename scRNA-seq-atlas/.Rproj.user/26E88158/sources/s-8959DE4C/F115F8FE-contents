@@ -79,8 +79,9 @@ ui <- fluidPage(
                         "ref_cortex_dev", "ref_pan_indrop", "ref_pan_smartseq2", 
                         "ref_mouse_atlas")),
             hr(),
-            helpText("Choose cell reference for clustify function")
-            
+            helpText("Choose cell reference for clustify function"),
+            downloadButton("downloadData", "Download reference matrix"),
+            downloadButton("downloadData", "Download clustify matrix")
         ),
         
         # Main panel for displaying outputs ----
@@ -280,6 +281,17 @@ server <- function(input, output, session) {
         head(res)
     })
     #Make plots such as heat maps to compare benchmarking with clustify with actual cell types
+    
+    output$downloadReference <- downloadHandler(
+        filename = function()  {
+            paste("")
+        }
+    )
+    output$downloadClustify <- downloadHandler(
+        filename = function()  {
+            paste("")
+        }
+    )
 }
 
 # Create Shiny app ----
