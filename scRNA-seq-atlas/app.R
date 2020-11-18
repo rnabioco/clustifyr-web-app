@@ -80,8 +80,8 @@ ui <- fluidPage(
                         "ref_mouse_atlas")),
             hr(),
             helpText("Choose cell reference for clustify function"),
-            downloadButton("downloadData", "Download reference matrix"),
-            downloadButton("downloadData", "Download clustify matrix")
+            downloadButton("downloadReference", "Download reference matrix"),
+            downloadButton("downloadClustify", "Download clustify matrix")
         ),
         
         # Main panel for displaying outputs ----
@@ -238,20 +238,7 @@ server <- function(input, output, session) {
     })
         
     output$reference <- renderTable({
-        #req(input$file1)
-        #req(input$file2)
-        #fileTypeFile1 <- file_ext(input$file1)
-        #fileTypeFile2 <- file_ext(input$file2)
-        #df1 <- read_csv(input$file1$datapath,
-         #               header = input$header,
-          #              sep = input$sep,
-           #             quote = input$quote)
-        #df2 <- read_csv(input$file2$datapath,
-          #              header = input$header,
-         #               sep = input$sep,
-           #             quote = input$quote)
         reference_matrix <- average_clusters(mat = data1(), metadata = data2()[[input$metadataCellType]], if_log = FALSE)
-        head(reference_matrix)
     })
     
     output$clustify <- renderTable({
@@ -278,18 +265,47 @@ server <- function(input, output, session) {
             ref_mat = benchmarkRef,
             query_genes = VariableFeatures(matrixSeuratObject)
         )
-        head(res)
     })
     #Make plots such as heat maps to compare benchmarking with clustify with actual cell types
     
+    dataRef <- reactive({
+        reference_matrix <- average_clusters(mat = data1(), metadata = data2()[[input$metadataCellType]], if_log = FALSE)
+        reference_matrix
+    })
+    
+    dataClustify <- reactive({
+        eh <- ExperimentHub()
+        # query
+        refs <- query(eh, "clustifyrdatahub")
+        #refs <- listResources(eh, "clustifyrdatahub")
+        benchmarkRef <- loadResources(eh, "clustifyrdatahub", input$dataHubReference)[[1]]
+        
+        UMIMatrix <- data1()
+        matrixSeuratObject <- CreateSeuratObject(counts = UMIMatrix, project = "Seurat object matrix", min.cells = 0, min.features = 0) 
+        matrixSeuratObject <- NormalizeData(matrixSeuratObject)
+        matrixSeuratObject <- FindVariableFeatures(matrixSeuratObject, selection.method = "vst", nfeatures = 2000)
+        
+        metadataCol <- data2()[[input$metadataCellType]]
+        # use for classification of cell types
+        res <- clustify(
+            input = matrixSeuratObject@assays$RNA@data, 
+            metadata = metadataCol,
+            ref_mat = benchmarkRef,
+            query_genes = VariableFeatures(matrixSeuratObject)
+        )
+        res
+    })
+    
     output$downloadReference <- downloadHandler(
-        filename = function()  {
-            paste("")
+        filename = dataRef(),
+        content = function(file) {
+            write.csv(dataRef(), file)
         }
     )
     output$downloadClustify <- downloadHandler(
-        filename = function()  {
-            paste("")
+        filename = dataClustify(),
+        content = function(file) {
+            write.csv(dataClustify(), file)
         }
     )
 }
