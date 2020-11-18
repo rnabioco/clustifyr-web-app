@@ -232,13 +232,43 @@ server <- function(input, output, session) {
             df2 <- load(file$datapath)
         }
         updateSelectInput(session, "metadataCellType",
-                          choices = colnames(df2)
+                          choices = c(NA, colnames(df2)),
+                          selected = NA
         )
         df2
     })
-        
+    
+    # dataRef <- reactive({
+    #     reference_matrix <- average_clusters(mat = data1(), metadata = data2()[[input$metadataCellType]], if_log = FALSE)
+    #     reference_matrix
+    # })
+    
+    #dataClustify <- reactive({
+    #    eh <- ExperimentHub()
+    # query
+    #    refs <- query(eh, "clustifyrdatahub")
+    #refs <- listResources(eh, "clustifyrdatahub")
+    #    benchmarkRef <- loadResources(eh, "clustifyrdatahub", input$dataHubReference)[[1]]
+    
+    #    UMIMatrix <- data1()
+    #    matrixSeuratObject <- CreateSeuratObject(counts = UMIMatrix, project = "Seurat object matrix", min.cells = 0, min.features = 0) 
+    #   matrixSeuratObject <- NormalizeData(matrixSeuratObject)
+    #   matrixSeuratObject <- FindVariableFeatures(matrixSeuratObject, selection.method = "vst", nfeatures = 2000)
+    
+    #  metadataCol <- data2()[[input$metadataCellType]]
+    #   # use for classification of cell types
+    # res <- clustify(
+    #   input = matrixSeuratObject@assays$RNA@data, 
+    #    metadata = metadataCol,
+    #  ref_mat = benchmarkRef,
+    # query_genes = VariableFeatures(matrixSeuratObject)
+    #)
+    #res
+    #})
+    
     output$reference <- renderTable({
         reference_matrix <- average_clusters(mat = data1(), metadata = data2()[[input$metadataCellType]], if_log = FALSE)
+        return(head(reference_matrix))
     })
     
     output$clustify <- renderTable({
@@ -265,36 +295,11 @@ server <- function(input, output, session) {
             ref_mat = benchmarkRef,
             query_genes = VariableFeatures(matrixSeuratObject)
         )
+        return(head(res))
     })
     #Make plots such as heat maps to compare benchmarking with clustify with actual cell types
     
-    dataRef <- reactive({
-        reference_matrix <- average_clusters(mat = data1(), metadata = data2()[[input$metadataCellType]], if_log = FALSE)
-        reference_matrix
-    })
     
-    dataClustify <- reactive({
-        eh <- ExperimentHub()
-        # query
-        refs <- query(eh, "clustifyrdatahub")
-        #refs <- listResources(eh, "clustifyrdatahub")
-        benchmarkRef <- loadResources(eh, "clustifyrdatahub", input$dataHubReference)[[1]]
-        
-        UMIMatrix <- data1()
-        matrixSeuratObject <- CreateSeuratObject(counts = UMIMatrix, project = "Seurat object matrix", min.cells = 0, min.features = 0) 
-        matrixSeuratObject <- NormalizeData(matrixSeuratObject)
-        matrixSeuratObject <- FindVariableFeatures(matrixSeuratObject, selection.method = "vst", nfeatures = 2000)
-        
-        metadataCol <- data2()[[input$metadataCellType]]
-        # use for classification of cell types
-        res <- clustify(
-            input = matrixSeuratObject@assays$RNA@data, 
-            metadata = metadataCol,
-            ref_mat = benchmarkRef,
-            query_genes = VariableFeatures(matrixSeuratObject)
-        )
-        res
-    })
     
     output$downloadReference <- downloadHandler(
         filename = dataRef(),
