@@ -10,6 +10,9 @@ options(shiny.maxRequestSize = 1500*1024^2)
 options(repos = BiocManager::repositories())
 options(shiny.reactlog = TRUE)
 
+eh <- ExperimentHub()
+refs <- query(eh, "clustifyrdatahub")
+
 # Define UI for data upload app ----
 ui <- fluidPage(
     
@@ -275,10 +278,7 @@ server <- function(input, output, session) {
         #Load matrix into Seurat object
         #Normalize with Seurat
         #Find variable genes with Seurat and store in query_genes param
-        
-        eh <- ExperimentHub()
-        # query
-        refs <- query(eh, "clustifyrdatahub")
+    
         #refs <- listResources(eh, "clustifyrdatahub")
         benchmarkRef <- loadResources(eh, "clustifyrdatahub", input$dataHubReference)[[1]]
         
