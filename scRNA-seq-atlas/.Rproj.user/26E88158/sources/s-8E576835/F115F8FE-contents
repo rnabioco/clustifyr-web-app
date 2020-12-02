@@ -283,9 +283,9 @@ server <- function(input, output, session) {
         benchmarkRef <- loadResources(eh, "clustifyrdatahub", input$dataHubReference)[[1]]
         
         UMIMatrix <- data1()
-        matrixSeuratObject <- CreateSeuratObject(counts = UMIMatrix, project = "Seurat object matrix", min.cells = 0, min.features = 0) 
-        matrixSeuratObject <- NormalizeData(matrixSeuratObject)
+        matrixSeuratObject <- CreateSeuratObject(counts = UMIMatrix, project = "Seurat object matrix", min.cells = 0, min.features = 0)
         matrixSeuratObject <- FindVariableFeatures(matrixSeuratObject, selection.method = "vst", nfeatures = 2000)
+        
         
         metadataCol <- data2()[[input$metadataCellType]]
         # use for classification of cell types
@@ -301,18 +301,20 @@ server <- function(input, output, session) {
     
     
     
-    # output$downloadReference <- downloadHandler(
-    #     filename = dataRef(),
-    #     content = function(file) {
-    #         write.csv(dataRef(), file)
-    #     }
-    # )
-    # output$downloadClustify <- downloadHandler(
-    #     filename = dataClustify(),
-    #     content = function(file) {
-    #         write.csv(dataClustify(), file)
-    #     }
-    # )
+    output$downloadReference <- downloadHandler(
+        filename = dataRef(),
+        content = function(file) {
+            write.csv(dataRef(), file)
+            mat %>% as_tibble(rownames = "rowname") %>% write_csv("mat.csv")
+        }
+    )
+    output$downloadClustify <- downloadHandler(
+        filename = dataClustify(),
+        content = function(file) {
+            write.csv(dataClustify(), file)
+            mat %>% as_tibble(rownames = "rowname") %>% write_csv("mat.csv")
+        }
+    )
 }
 
 # Create Shiny app ----
