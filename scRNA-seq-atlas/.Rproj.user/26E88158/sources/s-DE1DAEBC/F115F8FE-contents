@@ -106,78 +106,6 @@ ui <- fluidPage(
 # Define server logic to read selected file ----
 server <- function(input, output, session) {
     
-    output$contents1 <- renderTable({
-        
-        # input$file1 will be NULL initially. After the user selects
-        # and uploads a file, head of that data file by default,
-        # or all rows if selected, will be shown.
-        file <- input$file1
-        fileTypeFile1 <- tools::file_ext(file$datapath)
-        req(file)
-        # when reading semicolon separated files,
-        # having a comma separator causes `read.csv` to error
-            if (fileTypeFile1 == "csv")
-            {
-                df1 <- read.csv(file$datapath,
-                                header = input$header,
-                                sep = input$sep,
-                                quote = input$quote)
-                rownames(df1) <- df1[, 1]
-                df1[, 1] <- NULL
-            }
-            else if (fileTypeFile1 == "tsv")
-            {
-                df1 <- read_tsv(file$datapath,
-                                header = input$header,
-                                quote = input$quote)
-                rownames(df1) <- df1[, 1]
-                df1[, 1] <- NULL
-            }
-            else
-            {
-                df1 <- load(file$datapath)
-            }
-                
-            #file 1
-            if(input$disp == "head") {
-                return(head(df1, col = 5))
-            }
-            else {
-                return(df1)
-            }
-        })
-    
-    output$contents2 <- renderTable({
-        file <- input$file2    
-        fileTypeFile2 <- tools::file_ext(file$datapath)
-        req(file)
-        if (fileTypeFile2 == "csv")
-        {
-            df2 <- read.csv(file$datapath,
-                            header = input$header,
-                            sep = input$sep,
-                            quote = input$quote)
-        }
-        else if (fileTypeFile2 == "tsv")
-        {
-            df2 <- read_tsv(file$datapath,
-                            header = input$header,
-                            quote = input$quote)   
-        }
-        else
-        {
-            df2 <- load(file$datapath)
-        }
-        
-        #file 2
-        if(input$disp == "head") {
-            return(head(df2))
-        }
-        else {
-            return(df2)
-        }
-    })
-    
     data1 <- reactive({
         
         # input$file1 will be NULL initially. After the user selects
@@ -190,6 +118,11 @@ server <- function(input, output, session) {
         # having a comma separator causes `read.csv` to error
         if (fileTypeFile1 == "csv")
         {
+            # df1 <- read_delim(file$datapath, 
+            #                   ",",
+            #                   header = input$header,
+            #                   sep = input$sep,
+            #                   quote = input$quote)
             df1 <- read.csv(file$datapath,
                             header = input$header,
                             sep = input$sep,
@@ -222,6 +155,11 @@ server <- function(input, output, session) {
                             header = input$header,
                             sep = input$sep,
                             quote = input$quote)
+            # df2 <- read_delim(file$datapath,
+            #                   ",",
+            #                   header = input$header,
+            #                   sep = input$sep,
+            #                   quote = input$quote)
             
         }
         else if (fileTypeFile2 == "tsv")
@@ -240,6 +178,83 @@ server <- function(input, output, session) {
         )
         df2
     })
+    
+    output$contents1 <- renderTable({
+        
+        # input$file1 will be NULL initially. After the user selects
+        # and uploads a file, head of that data file by default,
+        # or all rows if selected, will be shown.
+        # file <- input$file1
+        # fileTypeFile1 <- tools::file_ext(file$datapath)
+        # req(file)
+        # # when reading semicolon separated files,
+        # # having a comma separator causes `read.csv` to error
+        #     if (fileTypeFile1 == "csv")
+        #     {
+        #         df1 <- read_csv(file$datapath,
+        #                         header = input$header,
+        #                         sep = input$sep,
+        #                         quote = input$quote)
+        #         rownames(df1) <- df1[, 1]
+        #         df1[, 1] <- NULL
+        #     }
+        #     else if (fileTypeFile1 == "tsv")
+        #     {
+        #         df1 <- read_tsv(file$datapath,
+        #                         header = input$header,
+        #                         quote = input$quote)
+        #         rownames(df1) <- df1[, 1]
+        #         df1[, 1] <- NULL
+        #     }
+        #     else
+        #     {
+        #         df1 <- load(file$datapath)
+        #     }
+            df1 <- data1()   
+            #file 1
+            if(input$disp == "head") {
+                return(head(df1, col = 5))
+            }
+            else {
+                return(df1)
+            }
+        })
+    
+    output$contents2 <- renderTable({
+        # file <- input$file2    
+        # fileTypeFile2 <- tools::file_ext(file$datapath)
+        # req(file)
+        # if (fileTypeFile2 == "csv")
+        # {
+        #     df2 <- read_delim(file$datapath, 
+        #                      ",", 
+        #                     header = input$header,
+        #                     sep = input$sep,
+        #                     quote = input$quote)
+        # }
+        # else if (fileTypeFile2 == "tsv")
+        # {
+        #     df2 <- read_tsv(file$datapath,
+        #                     header = input$header,
+        #                     quote = input$quote)   
+        # }
+        # else
+        # {
+        #     df2 <- load(file$datapath)
+        # }
+        df2 <- data2()
+        #file 2
+        if(input$disp == "head") {
+            return(head(df2))
+        }
+        else {
+            return(df2)
+        }
+    })
+    
+    
+    
+    
     
     # dataRef <- reactive({
     #     reference_matrix <- average_clusters(mat = data1(), metadata = data2()[[input$metadataCellType]], if_log = FALSE)
@@ -269,6 +284,29 @@ server <- function(input, output, session) {
     #res
     #})
     
+    dataRef <- reactive({
+        reference_matrix <- average_clusters(mat = data1(), metadata = data2()[[input$metadataCellType]], if_log = FALSE)
+        reference_matrix
+    })
+    
+    dataClustify <- reactive({
+        benchmarkRef <- loadResources(eh, "clustifyrdatahub", input$dataHubReference)[[1]]
+        
+        UMIMatrix <- data1()
+        matrixSeuratObject <- CreateSeuratObject(counts = UMIMatrix, project = "Seurat object matrix", min.cells = 0, min.features = 0)
+        matrixSeuratObject <- FindVariableFeatures(matrixSeuratObject, selection.method = "vst", nfeatures = 2000)
+        
+        metadataCol <- data2()[[input$metadataCellType]]
+        # use for classification of cell types
+        res <- clustify(
+            input = matrixSeuratObject@assays$RNA@data, 
+            metadata = metadataCol,
+            ref_mat = benchmarkRef,
+            query_genes = VariableFeatures(matrixSeuratObject)
+        )
+        res
+    })
+    
     output$reference <- renderTable({
         reference_matrix <- average_clusters(mat = data1(), metadata = data2()[[input$metadataCellType]], if_log = FALSE)
         return(head(reference_matrix))
@@ -286,7 +324,6 @@ server <- function(input, output, session) {
         matrixSeuratObject <- CreateSeuratObject(counts = UMIMatrix, project = "Seurat object matrix", min.cells = 0, min.features = 0)
         matrixSeuratObject <- FindVariableFeatures(matrixSeuratObject, selection.method = "vst", nfeatures = 2000)
         
-        
         metadataCol <- data2()[[input$metadataCellType]]
         # use for classification of cell types
         res <- clustify(
@@ -299,20 +336,30 @@ server <- function(input, output, session) {
     })
     #Make plots such as heat maps to compare benchmarking with clustify with actual cell types
     
+    referenceDownload <- reactive({
+        referenceMatrix <- dataRef()
+    })
     
+    clustifyDownload <- reactive({
+        clustifyMatrix <- dataClustify()
+    })
     
     output$downloadReference <- downloadHandler(
-        filename = dataRef(),
+        filename = function() {
+            paste("reference-", Sys.Date(), ".csv", sep="")
+        },
         content = function(file) {
-            write.csv(dataRef(), file)
-            mat %>% as_tibble(rownames = "rowname") %>% write_csv("mat.csv")
+            write.csv(referenceDownload(), file)
+            #mat %>% as_tibble(rownames = "rowname") %>% write_csv("mat.csv")
         }
     )
     output$downloadClustify <- downloadHandler(
-        filename = dataClustify(),
+        filename = function() {
+            paste("clustify-", Sys.Date(), ".csv", sep="")
+        },
         content = function(file) {
-            write.csv(dataClustify(), file)
-            mat %>% as_tibble(rownames = "rowname") %>% write_csv("mat.csv")
+            write.csv(clustifyMatrix(), file)
+            #mat %>% as_tibble(rownames = "rowname") %>% write_csv("mat.csv")
         }
     )
 }
