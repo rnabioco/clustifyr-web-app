@@ -41,8 +41,9 @@ ui <- fluidPage(
                                  '.xlsx',
                                  ".tsv",
                                  ".rds",
-                                 ".rda"),
+                                 ".rda")
             ),
+            actionButton("matrixPopup", "Display UMI Matrix in popup window"),
             fileInput("file2", "Choose Metadata File",
                       multiple = FALSE,
                       accept = c("text/csv",
@@ -51,9 +52,10 @@ ui <- fluidPage(
                                  '.xlsx',
                                  ".tsv",
                                  ".rds",
-                                 ".rda"),
+                                 ".rda")
                       ),
             
+            actionButton("metadataPopup", "Display Metadata table in popup"),
             tags$hr(),
             
             # Input: Checkbox if file has header ----
@@ -99,10 +101,10 @@ ui <- fluidPage(
         mainPanel(
             
             # Output: Data file ----
-            tableOutput("contents1"), #UMI Count Matrix
-            tags$hr(),
-            tableOutput("contents2"), #Metadata table
-            tags$hr(),
+            #tableOutput("contents1"), #UMI Count Matrix
+            #tags$hr(),
+            #tableOutput("contents2"), #Metadata table
+            #tags$hr(),
             tableOutput("reference"), #Reference Matrix
             tags$hr(),
             tableOutput("clustify") #Clustify Matrix
@@ -287,7 +289,28 @@ server <- function(input, output, session) {
         }
     })
     
-
+    observeEvent(input$matrixPopup, {
+        showModal(modalDialog(
+            tags$caption("UMI Count Matrix"),
+            DT::renderDataTable({
+                matrixRender <- head(data1Display())
+                DT::datatable(matrixRender, escape = FALSE)
+            }),
+            easyClose = TRUE
+        ))
+    })
+    
+    observeEvent(input$metadataPopup, {
+            showModal(modalDialog(
+                tags$caption("Metadata table"),
+                DT::renderDataTable({
+                    matrixRender <- head(data2())
+                    DT::datatable(matrixRender, escape = FALSE)
+                }),
+                easyClose = TRUE
+            ))
+        })
+    
     # dataRef <- reactive({
     #     reference_matrix <- average_clusters(mat = data1(), metadata = data2()[[input$metadataCellType]], if_log = FALSE)
     #     reference_matrix
