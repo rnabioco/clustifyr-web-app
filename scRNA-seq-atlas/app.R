@@ -7,7 +7,7 @@ library(rsconnect)
 library(ExperimentHub)
 library(Seurat)
 library(shinydashboard)
-
+library(ComplexHeatmap)
 
 options(shiny.maxRequestSize = 1500*1024^2)
 options(repos = BiocManager::repositories())
