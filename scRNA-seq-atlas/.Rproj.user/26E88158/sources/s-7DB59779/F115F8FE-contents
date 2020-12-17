@@ -358,7 +358,7 @@ server <- function(input, output, session) {
             paste("clustify-", Sys.Date(), ".csv", sep="")
         },
         content = function(file) {
-            write.csv(clustifyMatrix(), file)
+            write.csv(clustifyDownload(), file)
             #mat %>% as_tibble(rownames = "rowname") %>% write_csv("mat.csv")
         }
     )
