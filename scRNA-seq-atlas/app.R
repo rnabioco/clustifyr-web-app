@@ -365,30 +365,12 @@ server <- function(input, output, session) {
     
 
     output$reference <- renderTable({
-        reference_matrix <- average_clusters(mat = data1(), metadata = data2()[[input$metadataCellType]], if_log = FALSE)
+        reference_matrix <- dataRef()
         return(head(reference_matrix))
     })
     
     output$clustify <- renderTable({
-        #Load matrix into Seurat object
-        #Normalize with Seurat
-        #Find variable genes with Seurat and store in query_genes param
-    
-        #refs <- listResources(eh, "clustifyrdatahub")
-        benchmarkRef <- loadResources(eh, "clustifyrdatahub", input$dataHubReference)[[1]]
-        
-        UMIMatrix <- data1()
-        matrixSeuratObject <- CreateSeuratObject(counts = UMIMatrix, project = "Seurat object matrix", min.cells = 0, min.features = 0)
-        matrixSeuratObject <- FindVariableFeatures(matrixSeuratObject, selection.method = "vst", nfeatures = 2000)
-        
-        metadataCol <- data2()[[input$metadataCellType]]
-        # use for classification of cell types
-        res <- clustify(
-            input = matrixSeuratObject@assays$RNA@data, 
-            metadata = metadataCol,
-            ref_mat = benchmarkRef,
-            query_genes = VariableFeatures(matrixSeuratObject)
-        )
+        res <- dataClustify()
         return(head(res))
     })
     #Make plots such as heat maps to compare benchmarking with clustify with actual cell types
