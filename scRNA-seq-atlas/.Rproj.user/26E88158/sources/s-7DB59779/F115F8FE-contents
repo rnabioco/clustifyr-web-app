@@ -7,6 +7,7 @@ library(rsconnect)
 library(ExperimentHub)
 library(Seurat)
 library(shinydashboard)
+library(tidyverse)
 
 
 options(shiny.maxRequestSize = 1500*1024^2)
@@ -366,12 +367,12 @@ server <- function(input, output, session) {
 
     output$reference <- renderTable({
         reference_matrix <- dataRef()
-        return(head(reference_matrix))
+        head(rownames_to_column(as.data.frame(reference_matrix), input$metadataCellType))
     })
     
     output$clustify <- renderTable({
         res <- dataClustify()
-        return(head(res))
+        head(rownames_to_column(as.data.frame(res), input$metadataCellType))
     })
     #Make plots such as heat maps to compare benchmarking with clustify with actual cell types
     
