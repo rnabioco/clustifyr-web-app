@@ -178,7 +178,7 @@ server <- function(input, output, session) {
         )
         df2
     })
-    
+   
     output$contents1 <- renderTable({
         
         # input$file1 will be NULL initially. After the user selects
@@ -252,10 +252,7 @@ server <- function(input, output, session) {
         }
     })
     
-    
-    
-    
-    
+
     # dataRef <- reactive({
     #     reference_matrix <- average_clusters(mat = data1(), metadata = data2()[[input$metadataCellType]], if_log = FALSE)
     #     reference_matrix
@@ -284,11 +281,10 @@ server <- function(input, output, session) {
     #res
     #})
     
-    dataRef <- reactive({
+  dataRef <- reactive({
         reference_matrix <- average_clusters(mat = data1(), metadata = data2()[[input$metadataCellType]], if_log = FALSE)
         reference_matrix
-    })
-    
+
     dataClustify <- reactive({
         benchmarkRef <- loadResources(eh, "clustifyrdatahub", input$dataHubReference)[[1]]
         
@@ -307,6 +303,7 @@ server <- function(input, output, session) {
         res
     })
     
+
     output$reference <- renderTable({
         reference_matrix <- average_clusters(mat = data1(), metadata = data2()[[input$metadataCellType]], if_log = FALSE)
         return(head(reference_matrix))
