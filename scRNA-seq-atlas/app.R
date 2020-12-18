@@ -16,6 +16,7 @@ options(shiny.reactlog = TRUE)
 
 eh <- ExperimentHub()
 refs <- query(eh, "clustifyrdatahub")
+ref_dict <- refs$ah_id %>% setNames(refs$title)
 
 # Define UI for data upload app ----
 ui <- fluidPage(
@@ -32,6 +33,10 @@ ui <- fluidPage(
         
         # Sidebar panel for inputs ----
         sidebarPanel(
+            # load example data ----
+            actionButton("example", 
+                         "load example data",
+                         icon = icon("space-shuttle")),
             
             # Input: Select a file ----
             fileInput("file1", "Choose Matrix File",
@@ -151,13 +156,24 @@ server <- function(input, output, session) {
         }
         df1
     })
+  
+    # reactive file location to make interactivity easier
+    rv <- reactiveValues()
+    rv$matrixloc <- NULL
+    rv$metaloc <- NULL
+
     
     data1 <- reactive({
         
         # input$file1 will be NULL initially. After the user selects
         # and uploads a file, head of that data file by default,
         # or all rows if selected, will be shown.
-        file <- input$file1
+        if (!is.null(input$file1)) {
+            rv$matrixloc <- input$file1
+        }
+        
+        file <- rv$matrixloc
+        print(file)
         fileTypeFile1 <- tools::file_ext(file$datapath)
         req(file)
         # when reading semicolon separated files,
@@ -188,7 +204,10 @@ server <- function(input, output, session) {
     })
     
     data2 <- reactive({
-        file <- input$file2    
+        if (!is.null(input$file2)) {
+            rv$metaloc <- input$file2    
+        }
+        file <- rv$metaloc  
         fileTypeFile2 <- tools::file_ext(file$datapath)
         req(file)
         if (fileTypeFile2 == "csv")
@@ -343,11 +362,10 @@ server <- function(input, output, session) {
   dataRef <- reactive({
         reference_matrix <- average_clusters(mat = data1(), metadata = data2()[[input$metadataCellType]], if_log = FALSE)
         reference_matrix
-
   })
   
   dataClustify <- reactive({
-        benchmarkRef <- loadResources(eh, "clustifyrdatahub", input$dataHubReference)[[1]]
+        benchmarkRef <- refs[[ref_dict[input$dataHubReference]]]
         
         UMIMatrix <- data1()
         matrixSeuratObject <- CreateSeuratObject(counts = UMIMatrix, project = "Seurat object matrix", min.cells = 0, min.features = 0)
@@ -374,6 +392,7 @@ server <- function(input, output, session) {
         res <- dataClustify()
         head(rownames_to_column(as.data.frame(res), input$metadataCellType))
     })
+  
     #Make plots such as heat maps to compare benchmarking with clustify with actual cell types
     
     referenceDownload <- reactive({
@@ -400,6 +419,16 @@ server <- function(input, output, session) {
         content = function(file) {
             write.csv(clustifyDownload(), file)
             #mat %>% as_tibble(rownames = "rowname") %>% write_csv("mat.csv")
+        }
+    )
+    
+    # load example data
+    observeEvent(
+        input$example,
+        {
+            message("loading")
+            rv$matrixloc <- list(datapath = "../data/example-input/matrix.csv")
+            rv$metaloc <- list(datapath = "../data/example-input/meta-data.csv")
         }
     )
 }
