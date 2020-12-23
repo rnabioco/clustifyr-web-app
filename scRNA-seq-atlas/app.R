@@ -1,5 +1,6 @@
 library(shiny)
 library(waiter)
+library(data.table)
 library(dplyr)
 library(readr)
 library(tools)
@@ -177,18 +178,20 @@ server <- function(input, output, session) {
             #                   header = input$header,
             #                   sep = input$sep,
             #                   quote = input$quote)
-            df1 <- read.csv(file$datapath,
-                            header = input$header,
-                            sep = input$sep,
-                            quote = input$quote)
+            # df1 <- read.csv(file$datapath,
+            #                 header = input$header,
+            #                 sep = input$sep,
+            #                 quote = input$quote)
+            df1 <- fread(file$datapath) %>% as.data.frame()
             rownames(df1) <- df1[, 1]
             df1[, 1] <- NULL
         }
         else if (fileTypeFile1 == "tsv")
         {
-            df1 <- read_tsv(file$datapath,
-                            header = input$header,
-                            quote = input$quote)
+            df1 <- fread(file$datapath) %>% as.data.frame()
+            # df1 <- read_tsv(file$datapath,
+            #                 header = input$header,
+            #                 quote = input$quote)
             rownames(df1) <- df1[, 1]
             df1[, 1] <- NULL
         }
@@ -216,10 +219,11 @@ server <- function(input, output, session) {
         req(file)
         if (fileTypeFile2 == "csv")
         {
-            df2 <- read.csv(file$datapath,
-                            header = input$header,
-                            sep = input$sep,
-                            quote = input$quote)
+            df2 <- fread(file$datapath)
+            # df2 <- read.csv(file$datapath,
+            #                 header = input$header,
+            #                 sep = input$sep,
+            #                 quote = input$quote)
             # df2 <- read_delim(file$datapath,
             #                   ",",
             #                   header = input$header,
@@ -229,9 +233,10 @@ server <- function(input, output, session) {
         }
         else if (fileTypeFile2 == "tsv")
         {
-            df2 <- read_tsv(file$datapath,
-                            header = input$header,
-                            quote = input$quote) 
+            df2 <- fread(file$datapath)
+            # df2 <- read_tsv(file$datapath,
+            #                 header = input$header,
+            #                 quote = input$quote) 
         }
         else
         {
