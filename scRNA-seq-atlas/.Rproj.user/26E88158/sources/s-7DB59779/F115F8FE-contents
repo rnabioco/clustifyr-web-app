@@ -7,7 +7,6 @@ library(rsconnect)
 library(ExperimentHub)
 library(Seurat)
 library(shinydashboard)
-library(tidyverse)
 
 
 options(shiny.maxRequestSize = 1500*1024^2)
@@ -55,7 +54,6 @@ ui <- fluidPage(
                                  ".rds",
                                  ".rda")
                       ),
-            
             actionButton("metadataPopup", "Display Metadata table in popup"),
             tags$hr(),
             
