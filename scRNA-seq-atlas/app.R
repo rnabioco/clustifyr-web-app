@@ -131,7 +131,18 @@ server <- function(input, output, session) {
         # input$file1 will be NULL initially. After the user selects
         # and uploads a file, head of that data file by default,
         # or all rows if selected, will be shown.
-        file <- input$file1
+        
+        if (!is.null(input$file1)) {
+          rv$matrixloc <- input$file1
+        }
+        
+        file <- rv$matrixloc
+        
+        if (!is.null(file)) {
+          w1$show()
+          print(file)
+        }
+        
         fileTypeFile1 <- tools::file_ext(file$datapath)
         req(file)
         # when reading semicolon separated files,
@@ -158,6 +169,8 @@ server <- function(input, output, session) {
         {
             df1 <- load(file$datapath)
         }
+        
+        w1$hide()
         df1
     })
     
@@ -195,6 +208,13 @@ server <- function(input, output, session) {
                        h4("")
                      ))
     
+    w5 <- Waiter$new(id = "hmap",
+                     html = tagList(
+                       spin_flower(),
+                       h4("Heatmap drawing..."),
+                       h4("")
+                     ))
+    
     data1 <- reactive({
 
         # input$file1 will be NULL initially. After the user selects
@@ -204,9 +224,9 @@ server <- function(input, output, session) {
         if (!is.null(input$file1)) {
             rv$matrixloc <- input$file1
         }
-        
+
         file <- rv$matrixloc
-        
+
         if (!is.null(file)) {
           w1$show()
           print(file)
@@ -446,9 +466,14 @@ server <- function(input, output, session) {
     #Make plots such as heat maps to compare benchmarking with clustify with actual cell types
 
     output$hmap <- renderPlot({
+      
         # could expose as an option
         cutoff_to_display <- 0.5
         tmp_mat <<- dataClustify()
+        
+        if (!is.null(tmp_mat)) {
+          w5$show()
+        }
         tmp_mat <- tmp_mat[, colSums(tmp_mat > 0.5) > 1]
         s <- dim(tmp_mat)
         # figuring out how best to plot width and height based on input matrix size needs work
