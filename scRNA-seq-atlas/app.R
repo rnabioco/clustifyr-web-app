@@ -7,6 +7,9 @@ library(clustifyr)
 library(rsconnect)
 library(ExperimentHub)
 library(Seurat)
+library(shinydashboard)
+library(ComplexHeatmap)
+
 options(shiny.maxRequestSize = 1500*1024^2)
 options(repos = BiocManager::repositories())
 options(shiny.reactlog = TRUE)
@@ -17,18 +20,23 @@ ref_dict <- refs$ah_id %>% setNames(refs$title)
 
 # Define UI for data upload app ----
 ui <- fluidPage(
-  
+
     # waiter stuff ----
     use_waiter(),
     
     # App title ----
-    titlePanel("Clustifyr Reference Matrix Generation"),
-    
+    titlePanel("Clustifyr RShiny App"),
+    # #dashboardPage(
+    #     dashboardHeader(),
+    #     dashboardSidebar(),
+    #     dashboardBody()
+    # ),
     # Sidebar layout with input and output definitions ----
     sidebarLayout(
-        
+
         # Sidebar panel for inputs ----
         sidebarPanel(
+          
             # load example data ----
             actionButton("example", 
                          "load example data",
@@ -55,65 +63,103 @@ ui <- fluidPage(
                                  ".rds",
                                  ".rda")
                       ),
-            
+
             tags$hr(),
-            
+
             # Input: Checkbox if file has header ----
             checkboxInput("header", "Header", TRUE),
-            
-            
+
+
             # Horizontal line ----
             tags$hr(),
-            
+
             # Input: Select separator ----
             radioButtons("sep", "Separator",
                          choices = c(Comma = ",",
                                      Semicolon = ";",
                                      Tab = "\t"),
                          selected = ","),
-            
+
             # Input: Select number of rows to display ----
             radioButtons("disp", "Display",
                          choices = c(Head = "head",
                                      All = "all"),
                          selected = "head"),
-            
+
             selectInput("metadataCellType", "Cell Type Metadata Column:",
                         choice=list("")
                         ),
-            
-            hr(),
+
+
             helpText("Choose cell type metadata column for average_clusters function"),
-            
-            selectInput("dataHubReference", "ClustifyrDataHub Reference:", 
+            hr(),
+            selectInput("dataHubReference", "ClustifyrDataHub Reference:",
                         choices=list("ref_MCA","ref_tabula_muris_drop","ref_tabula_muris_facs",
                         "ref_mouse.rnaseq", "ref_moca_main", "ref_immgen", "ref_hema_microarray",
-                        "ref_cortex_dev", "ref_pan_indrop", "ref_pan_smartseq2", 
+                        "ref_cortex_dev", "ref_pan_indrop", "ref_pan_smartseq2",
                         "ref_mouse_atlas")),
+            helpText("Choose reference cell atlas for clustify function"),
             hr(),
             helpText("Choose cell reference for clustify function"),
             downloadButton("downloadReference", "Download reference matrix"),
             downloadButton("downloadClustify", "Download clustify matrix")
         ),
-        
+
         # Main panel for displaying outputs ----
         mainPanel(
-            
+
             # Output: Data file ----
-            tableOutput("contents1"),
+            tableOutput("contents1"), #UMI Count Matrix
             tags$hr(),
-            tableOutput("contents2"),
+            tableOutput("contents2"), #Metadata table
             tags$hr(),
-            tableOutput("reference"),
+            tableOutput("reference"), #Reference Matrix
             tags$hr(),
-            tableOutput("clustify")
+            tableOutput("clustify"), #Clustify Matrix
+            tags$hr(),
+            plotOutput("hmap", height = "600px")
         )
-        
+
     )
 )
 
 # Define server logic to read selected file ----
 server <- function(input, output, session) {
+
+    data1Display <- reactive({
+
+        # input$file1 will be NULL initially. After the user selects
+        # and uploads a file, head of that data file by default,
+        # or all rows if selected, will be shown.
+        file <- input$file1
+        fileTypeFile1 <- tools::file_ext(file$datapath)
+        req(file)
+        # when reading semicolon separated files,
+        # having a comma separator causes `read.csv` to error
+        if (fileTypeFile1 == "csv")
+        {
+            # df1 <- read_csv(file$datapath,
+            #                   header = input$header,
+            #                   sep = input$sep)
+            df1 <- read.csv(file$datapath,
+                            header = input$header,
+                            sep = input$sep)
+            rownames(df1) <- df1[, 1]
+            #df1[, 1] <- NULL
+        }
+        else if (fileTypeFile1 == "tsv")
+        {
+            df1 <- read_tsv(file$datapath,
+                            header = input$header)
+            rownames(df1) <- df1[, 1]
+            #df1[, 1] <- NULL
+        }
+        else
+        {
+            df1 <- load(file$datapath)
+        }
+        df1
+    })
     
     # reactive file location to make interactivity easier
     rv <- reactiveValues()
@@ -150,7 +196,7 @@ server <- function(input, output, session) {
                      ))
     
     data1 <- reactive({
-      
+
         # input$file1 will be NULL initially. After the user selects
         # and uploads a file, head of that data file by default,
         # or all rows if selected, will be shown.
@@ -172,23 +218,19 @@ server <- function(input, output, session) {
         # having a comma separator causes `read.csv` to error
         if (fileTypeFile1 == "csv")
         {
-            # df1 <- read_delim(file$datapath, 
-            #                   ",",
+            # df1 <- read_csv(file$datapath,
             #                   header = input$header,
-            #                   sep = input$sep,
-            #                   quote = input$quote)
+            #                   sep = input$sep)
             df1 <- read.csv(file$datapath,
                             header = input$header,
-                            sep = input$sep,
-                            quote = input$quote)
+                            sep = input$sep)
             rownames(df1) <- df1[, 1]
             df1[, 1] <- NULL
         }
         else if (fileTypeFile1 == "tsv")
         {
             df1 <- read_tsv(file$datapath,
-                            header = input$header,
-                            quote = input$quote)
+                            header = input$header)
             rownames(df1) <- df1[, 1]
             df1[, 1] <- NULL
         }
@@ -200,8 +242,9 @@ server <- function(input, output, session) {
         w1$hide()
         df1
     })
-    
+
     data2 <- reactive({
+
         if (!is.null(input$file2)) {
             rv$metaloc <- input$file2    
         }
@@ -218,20 +261,16 @@ server <- function(input, output, session) {
         {
             df2 <- read.csv(file$datapath,
                             header = input$header,
-                            sep = input$sep,
-                            quote = input$quote)
-            # df2 <- read_delim(file$datapath,
-            #                   ",",
+                            sep = input$sep)
+            # df2 <- read_csv(file$datapath,
             #                   header = input$header,
-            #                   sep = input$sep,
-            #                   quote = input$quote)
-            
+            #                   sep = input$sep)
+
         }
         else if (fileTypeFile2 == "tsv")
         {
             df2 <- read_tsv(file$datapath,
-                            header = input$header,
-                            quote = input$quote) 
+                            header = input$header)
         }
         else
         {
@@ -245,9 +284,9 @@ server <- function(input, output, session) {
         w2$hide()
         df2
     })
-   
+
     output$contents1 <- renderTable({
-        
+
         # input$file1 will be NULL initially. After the user selects
         # and uploads a file, head of that data file by default,
         # or all rows if selected, will be shown.
@@ -277,24 +316,24 @@ server <- function(input, output, session) {
         #     {
         #         df1 <- load(file$datapath)
         #     }
-            df1 <- data1()   
+            df1 <- data1Display()
             #file 1
             if(input$disp == "head") {
-                return(head(df1, col = 5))
+                return(head(df1, cols = 5))
             }
             else {
                 return(df1)
             }
         })
-    
+
     output$contents2 <- renderTable({
-        # file <- input$file2    
+        # file <- input$file2
         # fileTypeFile2 <- tools::file_ext(file$datapath)
         # req(file)
         # if (fileTypeFile2 == "csv")
         # {
-        #     df2 <- read_delim(file$datapath, 
-        #                      ",", 
+        #     df2 <- read_delim(file$datapath,
+        #                      ",",
         #                     header = input$header,
         #                     sep = input$sep,
         #                     quote = input$quote)
@@ -303,7 +342,7 @@ server <- function(input, output, session) {
         # {
         #     df2 <- read_tsv(file$datapath,
         #                     header = input$header,
-        #                     quote = input$quote)   
+        #                     quote = input$quote)
         # }
         # else
         # {
@@ -318,36 +357,36 @@ server <- function(input, output, session) {
             return(df2)
         }
     })
-    
+
 
     # dataRef <- reactive({
     #     reference_matrix <- average_clusters(mat = data1(), metadata = data2()[[input$metadataCellType]], if_log = FALSE)
     #     reference_matrix
     # })
-    
+
     #dataClustify <- reactive({
     #    eh <- ExperimentHub()
     # query
     #    refs <- query(eh, "clustifyrdatahub")
     #refs <- listResources(eh, "clustifyrdatahub")
     #    benchmarkRef <- loadResources(eh, "clustifyrdatahub", input$dataHubReference)[[1]]
-    
+
     #    UMIMatrix <- data1()
-    #    matrixSeuratObject <- CreateSeuratObject(counts = UMIMatrix, project = "Seurat object matrix", min.cells = 0, min.features = 0) 
+    #    matrixSeuratObject <- CreateSeuratObject(counts = UMIMatrix, project = "Seurat object matrix", min.cells = 0, min.features = 0)
     #   matrixSeuratObject <- NormalizeData(matrixSeuratObject)
     #   matrixSeuratObject <- FindVariableFeatures(matrixSeuratObject, selection.method = "vst", nfeatures = 2000)
-    
+
     #  metadataCol <- data2()[[input$metadataCellType]]
     #   # use for classification of cell types
     # res <- clustify(
-    #   input = matrixSeuratObject@assays$RNA@data, 
+    #   input = matrixSeuratObject@assays$RNA@data,
     #    metadata = metadataCol,
     #  ref_mat = benchmarkRef,
     # query_genes = VariableFeatures(matrixSeuratObject)
     #)
     #res
     #})
-    
+
   dataRef <- reactive({
         w3$show()
         reference_matrix <- average_clusters(mat = data1(), metadata = data2()[[input$metadataCellType]], if_log = FALSE)
@@ -362,11 +401,11 @@ server <- function(input, output, session) {
         UMIMatrix <- data1()
         matrixSeuratObject <- CreateSeuratObject(counts = UMIMatrix, project = "Seurat object matrix", min.cells = 0, min.features = 0)
         matrixSeuratObject <- FindVariableFeatures(matrixSeuratObject, selection.method = "vst", nfeatures = 2000)
-        
+
         metadataCol <- data2()[[input$metadataCellType]]
         # use for classification of cell types
         res <- clustify(
-            input = matrixSeuratObject@assays$RNA@data, 
+            input = matrixSeuratObject@assays$RNA@data,
             metadata = metadataCol,
             ref_mat = benchmarkRef,
             query_genes = VariableFeatures(matrixSeuratObject)
@@ -375,17 +414,17 @@ server <- function(input, output, session) {
         w4$hide()
         res
     })
-    
+
     output$reference <- renderTable({
         reference_matrix <- average_clusters(mat = data1(), metadata = data2()[[input$metadataCellType]], if_log = FALSE)
         return(head(reference_matrix))
     })
-    
+
     output$clustify <- renderTable({
         #Load matrix into Seurat object
         #Normalize with Seurat
         #Find variable genes with Seurat and store in query_genes param
-    
+
         #refs <- listResources(eh, "clustifyrdatahub")
         # benchmarkRef <- refs[[ref_dict[input$dataHubReference]]]
         # 
@@ -405,15 +444,34 @@ server <- function(input, output, session) {
         return(head(res))
     })
     #Make plots such as heat maps to compare benchmarking with clustify with actual cell types
-    
+
+    output$hmap <- renderPlot({
+        # could expose as an option
+        cutoff_to_display <- 0.5
+        tmp_mat <<- dataClustify()
+        tmp_mat <- tmp_mat[, colSums(tmp_mat > 0.5) > 1]
+        s <- dim(tmp_mat)
+        # figuring out how best to plot width and height based on input matrix size needs work
+        # this is pretty ugly currently
+        w <- unit(8 + (s[2] / 30), "inch")
+        h <- unit(8 + (s[1] / 30), "inch")
+        fs <- min(12, c(12:6)[findInterval(s[2], seq(6, 200, length.out = 7))])
+
+        hmap <- plot_cor_heatmap(tmp_mat, width = w)
+
+        ComplexHeatmap::draw(hmap,
+                             height = h,
+                             heatmap_column_names_gp = gpar(fontsize = fs))
+    })
+
     referenceDownload <- reactive({
         referenceMatrix <- dataRef()
     })
-    
+
     clustifyDownload <- reactive({
         clustifyMatrix <- dataClustify()
     })
-    
+
     output$downloadReference <- downloadHandler(
         filename = function() {
             paste("reference-", Sys.Date(), ".csv", sep="")
@@ -428,7 +486,7 @@ server <- function(input, output, session) {
             paste("clustify-", Sys.Date(), ".csv", sep="")
         },
         content = function(file) {
-            write.csv(clustifyMatrix(), file)
+            write.csv(clustifyDownload(), file)
             #mat %>% as_tibble(rownames = "rowname") %>% write_csv("mat.csv")
         }
     )
@@ -446,3 +504,4 @@ server <- function(input, output, session) {
 
 # Create Shiny app ----
 shinyApp(ui, server)
+
