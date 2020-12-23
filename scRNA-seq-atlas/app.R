@@ -8,6 +8,7 @@ library(rsconnect)
 library(ExperimentHub)
 library(Seurat)
 library(shinydashboard)
+library(tidyverse)
 library(ComplexHeatmap)
 
 options(shiny.maxRequestSize = 1500*1024^2)
@@ -53,6 +54,7 @@ ui <- fluidPage(
                                  ".rds",
                                  ".rda")
             ),
+            actionButton("matrixPopup", "Display UMI Matrix in popup window"),
             fileInput("file2", "Choose Metadata File",
                       multiple = FALSE,
                       accept = c("text/csv",
@@ -63,7 +65,8 @@ ui <- fluidPage(
                                  ".rds",
                                  ".rda")
                       ),
-
+            
+            actionButton("metadataPopup", "Display Metadata table in popup"),
             tags$hr(),
 
             # Input: Checkbox if file has header ----
@@ -90,7 +93,6 @@ ui <- fluidPage(
                         choice=list("")
                         ),
 
-
             helpText("Choose cell type metadata column for average_clusters function"),
             hr(),
             selectInput("dataHubReference", "ClustifyrDataHub Reference:",
@@ -109,10 +111,10 @@ ui <- fluidPage(
         mainPanel(
 
             # Output: Data file ----
-            tableOutput("contents1"), #UMI Count Matrix
-            tags$hr(),
-            tableOutput("contents2"), #Metadata table
-            tags$hr(),
+            #tableOutput("contents1"), #UMI Count Matrix
+            #tags$hr(),
+            #tableOutput("contents2"), #Metadata table
+            #tags$hr(),
             tableOutput("reference"), #Reference Matrix
             tags$hr(),
             tableOutput("clustify"), #Clustify Matrix
@@ -174,10 +176,46 @@ server <- function(input, output, session) {
         df1
     })
     
+    data1Display <- reactive({
+        
+        # input$file1 will be NULL initially. After the user selects
+        # and uploads a file, head of that data file by default,
+        # or all rows if selected, will be shown.
+        file <- input$file1
+        fileTypeFile1 <- tools::file_ext(file$datapath)
+        req(file)
+        # when reading semicolon separated files,
+        # having a comma separator causes `read.csv` to error
+        if (fileTypeFile1 == "csv")
+        {
+            # df1 <- read_csv(file$datapath,
+            #                   header = input$header,
+            #                   sep = input$sep)
+            df1 <- read.csv(file$datapath,
+                            header = input$header,
+                            sep = input$sep)
+            rownames(df1) <- df1[, 1]
+            #df1[, 1] <- NULL
+        }
+        else if (fileTypeFile1 == "tsv")
+        {
+            df1 <- read_tsv(file$datapath,
+                            header = input$header)
+            rownames(df1) <- df1[, 1]
+            #df1[, 1] <- NULL
+        }
+        else
+        {
+            df1 <- load(file$datapath)
+        }
+        df1
+    })
+  
     # reactive file location to make interactivity easier
     rv <- reactiveValues()
     rv$matrixloc <- NULL
     rv$metaloc <- NULL
+
     
     # waiter checkpoints
     w1 <- Waiter$new(id = "contents1",
@@ -285,7 +323,6 @@ server <- function(input, output, session) {
             # df2 <- read_csv(file$datapath,
             #                   header = input$header,
             #                   sep = input$sep)
-
         }
         else if (fileTypeFile2 == "tsv")
         {
@@ -377,8 +414,28 @@ server <- function(input, output, session) {
             return(df2)
         }
     })
-
-
+    
+    observeEvent(input$matrixPopup, {
+        showModal(modalDialog(
+            tags$caption("UMI Count Matrix"),
+            DT::renderDataTable({
+                matrixRender <- head(data1Display())
+                DT::datatable(matrixRender, escape = FALSE)
+            }),
+            easyClose = TRUE
+        ))
+    })
+    
+    observeEvent(input$metadataPopup, {
+            showModal(modalDialog(
+                tags$caption("Metadata table"),
+                DT::renderDataTable({
+                    matrixRender <- head(data2())
+                    DT::datatable(matrixRender, escape = FALSE)
+                }),
+                easyClose = TRUE
+            ))
+        })
     # dataRef <- reactive({
     #     reference_matrix <- average_clusters(mat = data1(), metadata = data2()[[input$metadataCellType]], if_log = FALSE)
     #     reference_matrix
@@ -436,33 +493,15 @@ server <- function(input, output, session) {
     })
 
     output$reference <- renderTable({
-        reference_matrix <- average_clusters(mat = data1(), metadata = data2()[[input$metadataCellType]], if_log = FALSE)
-        return(head(reference_matrix))
+        reference_matrix <- dataRef()
+        head(rownames_to_column(as.data.frame(reference_matrix), input$metadataCellType))
     })
 
     output$clustify <- renderTable({
-        #Load matrix into Seurat object
-        #Normalize with Seurat
-        #Find variable genes with Seurat and store in query_genes param
-
-        #refs <- listResources(eh, "clustifyrdatahub")
-        # benchmarkRef <- refs[[ref_dict[input$dataHubReference]]]
-        # 
-        # UMIMatrix <- data1()
-        # matrixSeuratObject <- CreateSeuratObject(counts = UMIMatrix, project = "Seurat object matrix", min.cells = 0, min.features = 0)
-        # matrixSeuratObject <- FindVariableFeatures(matrixSeuratObject, selection.method = "vst", nfeatures = 2000)
-        # 
-        # metadataCol <- data2()[[input$metadataCellType]]
-        # # use for classification of cell types
-        # res <- clustify(
-        #     input = matrixSeuratObject@assays$RNA@data, 
-        #     metadata = metadataCol,
-        #     ref_mat = benchmarkRef,
-        #     query_genes = VariableFeatures(matrixSeuratObject)
-        # )
-      res <- dataClustify()
-        return(head(res))
+        res <- dataClustify()
+        head(rownames_to_column(as.data.frame(res), input$metadataCellType))
     })
+  
     #Make plots such as heat maps to compare benchmarking with clustify with actual cell types
 
     output$hmap <- renderPlot({
