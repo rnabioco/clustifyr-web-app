@@ -1,4 +1,5 @@
 library(shiny)
+library(waiter)
 library(dplyr)
 library(readr)
 library(tools)
@@ -15,10 +16,14 @@ options(shiny.reactlog = TRUE)
 
 eh <- ExperimentHub()
 refs <- query(eh, "clustifyrdatahub")
+ref_dict <- refs$ah_id %>% setNames(refs$title)
 
 # Define UI for data upload app ----
 ui <- fluidPage(
 
+    # waiter stuff ----
+    use_waiter(),
+    
     # App title ----
     titlePanel("Clustifyr RShiny App"),
     # #dashboardPage(
@@ -31,7 +36,12 @@ ui <- fluidPage(
 
         # Sidebar panel for inputs ----
         sidebarPanel(
-
+          
+            # load example data ----
+            actionButton("example", 
+                         "load example data",
+                         icon = icon("space-shuttle")),
+            
             # Input: Select a file ----
             fileInput("file1", "Choose Matrix File",
                       multiple = TRUE,
@@ -41,7 +51,7 @@ ui <- fluidPage(
                                  '.xlsx',
                                  ".tsv",
                                  ".rds",
-                                 ".rda"),
+                                 ".rda")
             ),
             fileInput("file2", "Choose Metadata File",
                       multiple = FALSE,
@@ -51,7 +61,7 @@ ui <- fluidPage(
                                  '.xlsx',
                                  ".tsv",
                                  ".rds",
-                                 ".rda"),
+                                 ".rda")
                       ),
 
             tags$hr(),
@@ -150,13 +160,58 @@ server <- function(input, output, session) {
         }
         df1
     })
-
+    
+    # reactive file location to make interactivity easier
+    rv <- reactiveValues()
+    rv$matrixloc <- NULL
+    rv$metaloc <- NULL
+    
+    # waiter checkpoints
+    w1 <- Waiter$new(id = "contents1",
+                    html = tagList(
+                      spin_flower(),
+                      h4("Matrix loading..."),
+                      h4("")
+                      ))
+    
+    w2 <- Waiter$new(id = "contents2",
+                    html = tagList(
+                      spin_flower(),
+                      h4("Metadata loading..."),
+                      h4("")
+                    ))
+    
+    w3 <- Waiter$new(id = "reference",
+                     html = tagList(
+                       spin_flower(),
+                       h4("Reference building..."),
+                       h4("")
+                     ))
+    
+    w4 <- Waiter$new(id = "clustify",
+                     html = tagList(
+                       spin_flower(),
+                       h4("Clustifyr running..."),
+                       h4("")
+                     ))
+    
     data1 <- reactive({
 
         # input$file1 will be NULL initially. After the user selects
         # and uploads a file, head of that data file by default,
         # or all rows if selected, will be shown.
-        file <- input$file1
+      
+        if (!is.null(input$file1)) {
+            rv$matrixloc <- input$file1
+        }
+        
+        file <- rv$matrixloc
+        
+        if (!is.null(file)) {
+          w1$show()
+          print(file)
+        }
+        
         fileTypeFile1 <- tools::file_ext(file$datapath)
         req(file)
         # when reading semicolon separated files,
@@ -183,11 +238,23 @@ server <- function(input, output, session) {
         {
             df1 <- load(file$datapath)
         }
+        
+        w1$hide()
         df1
     })
 
     data2 <- reactive({
-        file <- input$file2
+
+        if (!is.null(input$file2)) {
+            rv$metaloc <- input$file2    
+        }
+        file <- rv$metaloc  
+        
+        if (!is.null(file)) {
+          w2$show()
+          print(file)
+        }
+        
         fileTypeFile2 <- tools::file_ext(file$datapath)
         req(file)
         if (fileTypeFile2 == "csv")
@@ -213,6 +280,8 @@ server <- function(input, output, session) {
                           choices = c(NA, colnames(df2)),
                           selected = NA
         )
+        
+        w2$hide()
         df2
     })
 
@@ -319,14 +388,16 @@ server <- function(input, output, session) {
     #})
 
   dataRef <- reactive({
+        w3$show()
         reference_matrix <- average_clusters(mat = data1(), metadata = data2()[[input$metadataCellType]], if_log = FALSE)
+        w3$hide()
         reference_matrix
-
   })
-
+  
   dataClustify <- reactive({
-        benchmarkRef <- loadResources(eh, "clustifyrdatahub", input$dataHubReference)[[1]]
-
+        w4$show()
+        benchmarkRef <- refs[[ref_dict[input$dataHubReference]]]
+        
         UMIMatrix <- data1()
         matrixSeuratObject <- CreateSeuratObject(counts = UMIMatrix, project = "Seurat object matrix", min.cells = 0, min.features = 0)
         matrixSeuratObject <- FindVariableFeatures(matrixSeuratObject, selection.method = "vst", nfeatures = 2000)
@@ -339,9 +410,10 @@ server <- function(input, output, session) {
             ref_mat = benchmarkRef,
             query_genes = VariableFeatures(matrixSeuratObject)
         )
+        
+        w4$hide()
         res
     })
-
 
     output$reference <- renderTable({
         reference_matrix <- average_clusters(mat = data1(), metadata = data2()[[input$metadataCellType]], if_log = FALSE)
@@ -354,20 +426,21 @@ server <- function(input, output, session) {
         #Find variable genes with Seurat and store in query_genes param
 
         #refs <- listResources(eh, "clustifyrdatahub")
-        benchmarkRef <- loadResources(eh, "clustifyrdatahub", input$dataHubReference)[[1]]
-
-        UMIMatrix <- data1()
-        matrixSeuratObject <- CreateSeuratObject(counts = UMIMatrix, project = "Seurat object matrix", min.cells = 0, min.features = 0)
-        matrixSeuratObject <- FindVariableFeatures(matrixSeuratObject, selection.method = "vst", nfeatures = 2000)
-
-        metadataCol <- data2()[[input$metadataCellType]]
-        # use for classification of cell types
-        res <- clustify(
-            input = matrixSeuratObject@assays$RNA@data,
-            metadata = metadataCol,
-            ref_mat = benchmarkRef,
-            query_genes = VariableFeatures(matrixSeuratObject)
-        )
+        # benchmarkRef <- refs[[ref_dict[input$dataHubReference]]]
+        # 
+        # UMIMatrix <- data1()
+        # matrixSeuratObject <- CreateSeuratObject(counts = UMIMatrix, project = "Seurat object matrix", min.cells = 0, min.features = 0)
+        # matrixSeuratObject <- FindVariableFeatures(matrixSeuratObject, selection.method = "vst", nfeatures = 2000)
+        # 
+        # metadataCol <- data2()[[input$metadataCellType]]
+        # # use for classification of cell types
+        # res <- clustify(
+        #     input = matrixSeuratObject@assays$RNA@data, 
+        #     metadata = metadataCol,
+        #     ref_mat = benchmarkRef,
+        #     query_genes = VariableFeatures(matrixSeuratObject)
+        # )
+      res <- dataClustify()
         return(head(res))
     })
     #Make plots such as heat maps to compare benchmarking with clustify with actual cell types
@@ -415,6 +488,16 @@ server <- function(input, output, session) {
         content = function(file) {
             write.csv(clustifyDownload(), file)
             #mat %>% as_tibble(rownames = "rowname") %>% write_csv("mat.csv")
+        }
+    )
+    
+    # load example data
+    observeEvent(
+        input$example,
+        {
+            message("loading prepackaged data")
+            rv$matrixloc <- list(datapath = "../data/example-input/matrix.csv")
+            rv$metaloc <- list(datapath = "../data/example-input/meta-data.csv")
         }
     )
 }
