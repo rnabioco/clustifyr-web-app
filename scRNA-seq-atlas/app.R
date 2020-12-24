@@ -15,11 +15,13 @@ options(shiny.maxRequestSize = 1500*1024^2)
 options(repos = BiocManager::repositories())
 options(shiny.reactlog = TRUE)
 
+# experiment hub setup
 eh <- ExperimentHub()
 refs <- query(eh, "clustifyrdatahub")
 ref_dict <- refs$ah_id %>% setNames(refs$title)
 
 list_geo <- function(id) {
+  # look for files
   out <- tryCatch(suppressMessages(GEOquery::getGEOSuppFiles(id,
                                                       makeDirectory = F,
                                                       fetch_files = F))$fname,
@@ -27,6 +29,7 @@ list_geo <- function(id) {
     "error_get"
   })
   
+  # make links
   out <- data.frame(file = out) %>% 
     mutate(link = str_c("https://ftp.ncbi.nlm.nih.gov/geo/series/GSE",
                         str_extract(file, "[0-9]{3}"),
@@ -59,6 +62,7 @@ preview_link <- function(link, n_row = 5, n_col = 50, verbose = T) {
   return(temp_df)
 }
 # preview_link(list_geo("GSE113049")$link[1])
+# preview_link(list_geo("GSE113049")$link[2])[, 1:5]
 
 # Define UI for data upload app ----
 ui <- fluidPage(
@@ -83,6 +87,9 @@ ui <- fluidPage(
             actionButton("example", 
                          "load example data",
                          icon = icon("space-shuttle")),
+            actionButton("geo", 
+                         "from GEO id",
+                         icon = icon("search")),
             
             # Input: Select a file ----
             fileInput("file1", "Choose Matrix File",
@@ -604,6 +611,22 @@ server <- function(input, output, session) {
             rv$matrixloc <- list(datapath = "../data/example-input/matrix.csv")
             rv$metaloc <- list(datapath = "../data/example-input/meta-data.csv")
         }
+    )
+    
+    # modal for GEO id
+    observeEvent(
+      input$geo,
+      {
+        links <- list_geo("GSE113049")
+        showModal(modalDialog(
+          tags$caption("try to make reference from GEO id"),
+          DT::renderDataTable(preview_link(links$link[1])[, 1:5]),
+          DT::renderDataTable(preview_link(links$link[2])[, 1:5]),
+          easyClose = TRUE
+        ))
+        rv$matrixloc <- list(datapath = url(links$link[1]))
+        rv$metaloc <- list(datapath = url(links$link[2]))
+      }
     )
 }
 
