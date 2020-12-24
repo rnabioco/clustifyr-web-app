@@ -19,6 +19,23 @@ eh <- ExperimentHub()
 refs <- query(eh, "clustifyrdatahub")
 ref_dict <- refs$ah_id %>% setNames(refs$title)
 
+list_geo <- function(id) {
+  out <- tryCatch(suppressMessages(GEOquery::getGEOSuppFiles(id,
+                                                      makeDirectory = F,
+                                                      fetch_files = F))$fname,
+  error = function(e) {
+    "error_get"
+  })
+  
+  out <- data.frame(file = out) %>% 
+    mutate(link = str_c("https://ftp.ncbi.nlm.nih.gov/geo/series/GSE",
+                        str_extract(file, "[0-9]{3}"),
+                        "nnn/GSE113049/suppl/",
+                        file))
+  
+  out
+}
+
 preview_link <- function(link, n_row = 5, n_col = 50, verbose = T) {
   # make sure link works
   message(link)
@@ -37,10 +54,11 @@ preview_link <- function(link, n_row = 5, n_col = 50, verbose = T) {
   close(url1)
   
   # parsing, using fread auto
-  temp_df <- data.table::fread(text = temp, header = TRUE, fill = TRUE)
+  temp_df <- data.table::fread(text = temp)#, header = TRUE, fill = TRUE)
     
   return(temp_df)
 }
+# preview_link(list_geo("GSE113049")$link[1])
 
 # Define UI for data upload app ----
 ui <- fluidPage(
