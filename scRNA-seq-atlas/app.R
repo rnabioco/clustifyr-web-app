@@ -19,6 +19,29 @@ eh <- ExperimentHub()
 refs <- query(eh, "clustifyrdatahub")
 ref_dict <- refs$ah_id %>% setNames(refs$title)
 
+preview_link <- function(link, n_row = 5, n_col = 50, verbose = T) {
+  # make sure link works
+  message(link)
+  if (!str_starts(str_to_lower(link), "http")) {
+    return(NA)
+  }
+  
+  # stream in a few lines only
+  message("read")
+  url1 <- url(link)
+  if (str_ends(link, "\\.gz")) {
+    temp <- readLines(gzcon(url1), n = n_row)
+  } else {
+    temp <- readLines(url1, n = n_row)
+  }
+  close(url1)
+  
+  # parsing, using fread auto
+  temp_df <- data.table::fread(text = temp, header = TRUE, fill = TRUE)
+    
+  return(temp_df)
+}
+
 # Define UI for data upload app ----
 ui <- fluidPage(
 
