@@ -59,7 +59,7 @@ ui <- dashboardPage(
                                  ".rds",
                                  ".rda")
             ),
-            actionButton("matrixPopup", "Display UMI Matrix in popup window"),
+            actionButton("matrixPopup", "Display UMI Matrix in popup"),
             tags$hr(),
             
             fileInput("file2", "Choose Metadata File",
@@ -111,7 +111,8 @@ ui <- dashboardPage(
             hr(),
             helpText("Choose cell reference for clustify function"),
             downloadButton("downloadReference", "Download reference matrix"),
-            downloadButton("downloadClustify", "Download clustify matrix")
+            downloadButton("downloadClustify", "Download clustify matrix"),
+            actionButton("uploadClustify", "Upload reference matrix")
           ),
           
           # Main panel for displaying outputs ----
