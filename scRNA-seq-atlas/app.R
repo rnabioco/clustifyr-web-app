@@ -430,9 +430,9 @@ server <- function(input, output, session) {
   
   observeEvent(input$matrixPopup, {
     showModal(modalDialog(
-      tags$caption("UMI Count Matrix"),
+      tags$caption("Matrix table"),
       DT::renderDataTable({
-        matrixRender <- head(data1Display())
+        matrixRender <- head(data1())
         DT::datatable(matrixRender, escape = FALSE)
       }),
       easyClose = TRUE
