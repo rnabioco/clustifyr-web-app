@@ -31,51 +31,15 @@ ui <- dashboardPage(
     )
   ),
   dashboardBody(
+    tabItems(
     tabItem(tabName = "dashboard",
-        fluidPage(
-        
         # waiter stuff ----
         use_waiter(),
         
-        # App title ----
-        titlePanel("Clustifyr RShiny App"),
-        
-        # Sidebar layout with input and output definitions ----
-          
-          # Sidebar panel for inputs ----
-          sidebarPanel(
             # load example data ----
             actionButton("example", 
                          "load example data",
                          icon = icon("space-shuttle")),
-            
-            # Input: Select a file ----
-            fileInput("file1", "Choose Matrix File",
-                      multiple = TRUE,
-                      accept = c("text/csv",
-                                 "text/comma-separated-values,text/plain",
-                                 ".csv",
-                                 '.xlsx',
-                                 ".tsv",
-                                 ".rds",
-                                 ".rda")
-            ),
-            actionButton("matrixPopup", "Display UMI Matrix in popup"),
-            tags$hr(),
-            
-            fileInput("file2", "Choose Metadata File",
-                      multiple = FALSE,
-                      accept = c("text/csv",
-                                 "text/comma-separated-values,text/plain",
-                                 ".csv",
-                                 '.xlsx',
-                                 ".tsv",
-                                 ".rds",
-                                 ".rda")
-            ),
-            
-            actionButton("metadataPopup", "Display Metadata table in popup"),
-            tags$hr(),
 
             # Input: Checkbox if file has header ----
             checkboxInput("header", "Header", TRUE),
@@ -95,46 +59,10 @@ ui <- dashboardPage(
             radioButtons("disp", "Display",
                          choices = c(Head = "head",
                                      All = "all"),
-                         selected = "head"),
-
-            selectInput("metadataCellType", "Cell Type Metadata Column:",
-                        choice=list("")
-            ),
-            
-            helpText("Choose cell type metadata column for average_clusters function"),
-            hr(),
-            selectInput("dataHubReference", "ClustifyrDataHub Reference:",
-                        choices=list("ref_MCA","ref_tabula_muris_drop","ref_tabula_muris_facs",
-                                     "ref_mouse.rnaseq", "ref_moca_main", "ref_immgen", "ref_hema_microarray",
-                                     "ref_cortex_dev", "ref_pan_indrop", "ref_pan_smartseq2",
-                                     "ref_mouse_atlas")),
-            helpText("Choose reference cell atlas for clustify function"),
-            hr(),
-            helpText("Choose cell reference for clustify function"),
-            downloadButton("downloadReference", "Download reference matrix"),
-            downloadButton("downloadClustify", "Download clustify matrix"),
-            actionButton("uploadClustify", "Upload reference matrix")
-          ),
-          
-          # Main panel for displaying outputs ----
-          mainPanel(
-            # Output: Data file ----
-            #tableOutput("contents1"), #UMI Count Matrix
-            #tags$hr(),
-            #tableOutput("contents2"), #Metadata table
-            #tags$hr(),
-            tableOutput("reference"), #Reference Matrix
-            tags$hr(),
-            tableOutput("clustify"), #Clustify Matrix
-            tags$hr(),
-            plotOutput("hmap", height = "600px")
-          )
-      )
+                         selected = "head")
     ), 
     tabItem(tabName = "matrixLoad",
             h2("Load UMI Counts Matrix"),
-            fluidPage(
-                sidebarPanel(
                   # Input: Select a file ----
                   fileInput("file1", "Choose Matrix File",
                             multiple = TRUE,
@@ -146,19 +74,13 @@ ui <- dashboardPage(
                                        ".rds",
                                        ".rda")
                   ),
-                  actionButton("matrixPopup", "Display UMI Matrix in popup")
-                ),
-                
-                mainPanel(
+                  actionButton("matrixPopup", "Display UMI Matrix in popup"),
                   tableOutput("contents1"), #UMI Count Matrix
                   tags$hr()
-                )
-            )
+
     ),
     tabItem(tabName ="metadataLoad",
             h2("Load Metadata table"),
-            fluidPage(
-                sidebarPanel(
                   fileInput("file2", "Choose Metadata File",
                             multiple = FALSE,
                             accept = c("text/csv",
@@ -171,37 +93,12 @@ ui <- dashboardPage(
                   ),
                   
                   actionButton("metadataPopup", "Display Metadata table in popup"),
-                ),
-                
-                mainPanel(
                   tableOutput("contents2"), #Metadata table
                   tags$hr()
-                )
-            )
-    ),
+                ),
     tabItem(tabName = "clusterRefCol",
             h2("Choose cluster and reference column (cell types)"),
-            fluidPage(
-                sidebarPanel(
-                  checkboxInput("header", "Header", TRUE),
-                  
-                  
-                  # Horizontal line ----
-                  tags$hr(),
-                  
-                  # Input: Select separator ----
-                  radioButtons("sep", "Separator",
-                               choices = c(Comma = ",",
-                                           Semicolon = ";",
-                                           Tab = "\t"),
-                               selected = ","),
-                  
-                  # Input: Select number of rows to display ----
-                  radioButtons("disp", "Display",
-                               choices = c(Head = "head",
-                                           All = "all"),
-                               selected = "head"),
-                  
+                
                   selectInput("metadataCellType", "Cell Type Metadata Column:",
                               choice=list("")
                   ),
@@ -218,18 +115,15 @@ ui <- dashboardPage(
                   helpText("Choose cell reference for clustify function"),
                   downloadButton("downloadReference", "Download reference matrix"),
                   downloadButton("downloadClustify", "Download clustify matrix"),
-                  actionButton("uploadClustify", "Upload reference matrix")
-                ),
+                  actionButton("uploadClustify", "Upload reference matrix"),
                 
-                mainPanel(
                   tableOutput("reference"), #Reference Matrix
                   tags$hr(),
                   tableOutput("clustify"), #Clustify Matrix
                   tags$hr(),
                   plotOutput("hmap", height = "600px")
-                )
             )
-    ),
+    )
   )
 )
 
