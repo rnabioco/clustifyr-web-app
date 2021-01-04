@@ -25,12 +25,14 @@ ui <- dashboardPage(
   dashboardSidebar(
     sidebarMenu(
       menuItem("Dashboard", tabName = "dashboard", icon = icon("dashboard")),
-      menuItem("Widgets", tabName = "widgets", icon = icon("th"))
+      menuItem("Load Matrix", tabName = "matrixLoad", icon = icon("th")),
+      menuItem("Load Metadata", tabName = "metadataLoad", icon = icon("th")),
+      menuItem("Choose cluster and ref column", tabName = "clusterRefCol", icon = icon("th"))
     )
   ),
   dashboardBody(
     tabItem(tabName = "dashboard",
-          fluidPage(
+        fluidPage(
         
         # waiter stuff ----
         use_waiter(),
@@ -132,9 +134,111 @@ ui <- dashboardPage(
         )
       )
     ), 
-    tabItem(tabName = "widgets",
-            h2("Widgets tab content")
-    )
+    tabItem(tabName = "matrixLoad",
+            h2("Load UMI Counts Matrix"),
+            fluidPage(
+              sidebarLayout(
+                sidebarPanel(
+                  # Input: Select a file ----
+                  fileInput("file1", "Choose Matrix File",
+                            multiple = TRUE,
+                            accept = c("text/csv",
+                                       "text/comma-separated-values,text/plain",
+                                       ".csv",
+                                       '.xlsx',
+                                       ".tsv",
+                                       ".rds",
+                                       ".rda")
+                  ),
+                  actionButton("matrixPopup", "Display UMI Matrix in popup")
+                ),
+                
+                mainPanel(
+                  tableOutput("contents1"), #UMI Count Matrix
+                  tags$hr()
+                )
+              )
+            )
+    ),
+    tabItem(tabName ="metadataLoad",
+            h2("Load Metadata table"),
+            fluidPage(
+              sidebarLayout(
+                sidebarPanel(
+                  fileInput("file2", "Choose Metadata File",
+                            multiple = FALSE,
+                            accept = c("text/csv",
+                                       "text/comma-separated-values,text/plain",
+                                       ".csv",
+                                       '.xlsx',
+                                       ".tsv",
+                                       ".rds",
+                                       ".rda")
+                  ),
+                  
+                  actionButton("metadataPopup", "Display Metadata table in popup"),
+                ),
+                
+                mainPanel(
+                  tableOutput("contents2"), #Metadata table
+                  tags$hr()
+                )
+              )
+            )
+    ),
+    tabItem(tabName = "clusterRefCol",
+            h2("Choose cluster and reference column (cell types)"),
+            fluidPage(
+              sidebarLayout(
+                sidebarPanel(
+                  checkboxInput("header", "Header", TRUE),
+                  
+                  
+                  # Horizontal line ----
+                  tags$hr(),
+                  
+                  # Input: Select separator ----
+                  radioButtons("sep", "Separator",
+                               choices = c(Comma = ",",
+                                           Semicolon = ";",
+                                           Tab = "\t"),
+                               selected = ","),
+                  
+                  # Input: Select number of rows to display ----
+                  radioButtons("disp", "Display",
+                               choices = c(Head = "head",
+                                           All = "all"),
+                               selected = "head"),
+                  
+                  selectInput("metadataCellType", "Cell Type Metadata Column:",
+                              choice=list("")
+                  ),
+                  
+                  helpText("Choose cell type metadata column for average_clusters function"),
+                  hr(),
+                  selectInput("dataHubReference", "ClustifyrDataHub Reference:",
+                              choices=list("ref_MCA","ref_tabula_muris_drop","ref_tabula_muris_facs",
+                                           "ref_mouse.rnaseq", "ref_moca_main", "ref_immgen", "ref_hema_microarray",
+                                           "ref_cortex_dev", "ref_pan_indrop", "ref_pan_smartseq2",
+                                           "ref_mouse_atlas")),
+                  helpText("Choose reference cell atlas for clustify function"),
+                  hr(),
+                  helpText("Choose cell reference for clustify function"),
+                  downloadButton("downloadReference", "Download reference matrix"),
+                  downloadButton("downloadClustify", "Download clustify matrix"),
+                  actionButton("uploadClustify", "Upload reference matrix")
+                ),
+                
+                mainPanel(
+                  tableOutput("reference"), #Reference Matrix
+                  tags$hr(),
+                  tableOutput("clustify"), #Clustify Matrix
+                  tags$hr(),
+                  plotOutput("hmap", height = "600px")
+                )
+              )
+            )
+    ),
   )
 )
 
