@@ -41,7 +41,6 @@ ui <- dashboardPage(
         titlePanel("Clustifyr RShiny App"),
         
         # Sidebar layout with input and output definitions ----
-        sidebarLayout(
           
           # Sidebar panel for inputs ----
           sidebarPanel(
@@ -130,14 +129,11 @@ ui <- dashboardPage(
             tags$hr(),
             plotOutput("hmap", height = "600px")
           )
-          
-        )
       )
     ), 
     tabItem(tabName = "matrixLoad",
             h2("Load UMI Counts Matrix"),
             fluidPage(
-              sidebarLayout(
                 sidebarPanel(
                   # Input: Select a file ----
                   fileInput("file1", "Choose Matrix File",
@@ -157,13 +153,11 @@ ui <- dashboardPage(
                   tableOutput("contents1"), #UMI Count Matrix
                   tags$hr()
                 )
-              )
             )
     ),
     tabItem(tabName ="metadataLoad",
             h2("Load Metadata table"),
             fluidPage(
-              sidebarLayout(
                 sidebarPanel(
                   fileInput("file2", "Choose Metadata File",
                             multiple = FALSE,
@@ -183,13 +177,11 @@ ui <- dashboardPage(
                   tableOutput("contents2"), #Metadata table
                   tags$hr()
                 )
-              )
             )
     ),
     tabItem(tabName = "clusterRefCol",
             h2("Choose cluster and reference column (cell types)"),
             fluidPage(
-              sidebarLayout(
                 sidebarPanel(
                   checkboxInput("header", "Header", TRUE),
                   
@@ -236,7 +228,6 @@ ui <- dashboardPage(
                   tags$hr(),
                   plotOutput("hmap", height = "600px")
                 )
-              )
             )
     ),
   )
