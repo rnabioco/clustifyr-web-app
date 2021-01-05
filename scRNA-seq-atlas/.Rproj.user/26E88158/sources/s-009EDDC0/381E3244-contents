@@ -51,7 +51,7 @@ ui <- dashboardPage(
         tags$hr(),
 
         # Input: Select separator ----
-        radioButtons("sep", "Separator",
+        radioButtons("sepMat", "Separator - Matrix",
           choices = c(
             Comma = ",",
             Semicolon = ";",
@@ -59,9 +59,25 @@ ui <- dashboardPage(
           ),
           selected = ","
         ),
-
+        
+        radioButtons("sepMeta", "Separator - Metadata",
+                     choices = c(
+                       Comma = ",",
+                       Semicolon = ";",
+                       Tab = "\t"
+                     ),
+                     selected = ","
+        ),
+        
         # Input: Select number of rows to display ----
-        radioButtons("disp", "Display",
+        radioButtons("dispMat", "Display - Matrix",
+                     choices = c(
+                       Head = "head",
+                       All = "all"
+                     ),
+                     selected = "head"
+        ),
+        radioButtons("dispMeta", "Display - Metadata",
           choices = c(
             Head = "head",
             All = "all"
@@ -173,7 +189,7 @@ server <- function(input, output, session) {
       #                   sep = input$sep)
       df1 <- read.csv(file$datapath,
         header = input$header,
-        sep = input$sep
+        sep = input$sepMat
       )
       rownames(df1) <- df1[, 1]
       # df1[, 1] <- NULL
@@ -209,7 +225,7 @@ server <- function(input, output, session) {
       #                   sep = input$sep)
       df1 <- read.csv(file$datapath,
         header = input$header,
-        sep = input$sep
+        sep = input$sepMat
       )
       rownames(df1) <- df1[, 1]
       # df1[, 1] <- NULL
@@ -306,7 +322,7 @@ server <- function(input, output, session) {
       #                   sep = input$sep)
       df1 <- read.csv(file$datapath,
         header = input$header,
-        sep = input$sep
+        sep = input$sepMat
       )
       rownames(df1) <- df1[, 1]
       df1[, 1] <- NULL
@@ -342,7 +358,7 @@ server <- function(input, output, session) {
     if (fileTypeFile2 == "csv") {
       df2 <- read.csv(file$datapath,
         header = input$header,
-        sep = input$sep
+        sep = input$sepMeta
       )
       # df2 <- read_csv(file$datapath,
       #                   header = input$header,
@@ -398,7 +414,7 @@ server <- function(input, output, session) {
     #     }
     df1 <- data1Display()
     # file 1
-    if (input$disp == "head") {
+    if (input$dispMat == "head") {
       return(head(df1, cols = 5))
     }
     else {
@@ -430,7 +446,7 @@ server <- function(input, output, session) {
     # }
     df2 <- data2()
     # file 2
-    if (input$disp == "head") {
+    if (input$dispMeta == "head") {
       return(head(df2))
     }
     else {
