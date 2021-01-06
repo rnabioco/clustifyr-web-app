@@ -366,8 +366,8 @@ server <- function(input, output, session) {
     df2 <- fread(file$datapath, header = input$header, sep = input$sepMeta)
     # if (fileTypeFile2 == "csv") {
     #   df2 <- read.csv(file$datapath,
-    #     header = input$header,
-    #     sep = input$sepMeta
+    #                   header = input$header,
+    #                   sep = input$sepMeta
     #   )
     #   # df2 <- read_csv(file$datapath,
     #   #                   header = input$header,
@@ -375,15 +375,15 @@ server <- function(input, output, session) {
     # }
     # else if (fileTypeFile2 == "tsv") {
     #   df2 <- read_tsv(file$datapath,
-    #     header = input$header
+    #                   header = input$header
     #   )
     # }
     # else {
     #   df2 <- load(file$datapath)
     # }
     # updateSelectInput(session, "metadataCellType",
-    #   choices = c(NA, colnames(df2)),
-    #   selected = NA
+    #                   choices = c("", colnames(df2)),
+    #                   selected = ""
     # )
 
     w2$hide()

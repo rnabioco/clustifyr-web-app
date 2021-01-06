@@ -363,7 +363,7 @@ server <- function(input, output, session) {
     fileTypeFile2 <- tools::file_ext(file$datapath)
     req(file)
     
-    df1 <- fread(file$datapath, header = input$header, sep = input$sepMeta)
+    df2 <- fread(file$datapath, header = input$header, sep = input$sepMeta)
     # if (fileTypeFile2 == "csv") {
     #   df2 <- read.csv(file$datapath,
     #     header = input$header,
