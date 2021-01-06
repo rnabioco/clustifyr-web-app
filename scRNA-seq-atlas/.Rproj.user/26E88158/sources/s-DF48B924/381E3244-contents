@@ -9,6 +9,7 @@ library(ExperimentHub)
 library(Seurat)
 library(shinydashboard)
 library(tidyverse)
+library(data.table)
 # library(ComplexHeatmap)
 
 options(shiny.maxRequestSize = 1500 * 1024^2)
@@ -178,35 +179,37 @@ server <- function(input, output, session) {
       w1$show()
       print(file)
     }
-
-    fileTypeFile1 <- tools::file_ext(file$datapath)
-    req(file)
-    # when reading semicolon separated files,
-    # having a comma separator causes `read.csv` to error
-    if (fileTypeFile1 == "csv") {
-      # df1 <- read_csv(file$datapath,
-      #                   header = input$header,
-      #                   sep = input$sep)
-      df1 <- read.csv(file$datapath,
-        header = input$header,
-        sep = input$sepMat
-      )
-      rownames(df1) <- df1[, 1]
-      # df1[, 1] <- NULL
-    }
-    else if (fileTypeFile1 == "tsv") {
-      df1 <- read_tsv(file$datapath,
-        header = input$header
-      )
-      rownames(df1) <- df1[, 1]
-      # df1[, 1] <- NULL
-    }
-    else {
-      df1 <- load(file$datapath)
-    }
-
+    
+    df1 <- fread(file$datapath, header = input$header, sep = input$sepMat)
+    
+    # fileTypeFile1 <- tools::file_ext(file$datapath)
+    # req(file)
+    # # when reading semicolon separated files,
+    # # having a comma separator causes `read.csv` to error
+    # if (fileTypeFile1 == "csv") {
+    #   # df1 <- read_csv(file$datapath,
+    #   #                   header = input$header,
+    #   #                   sep = input$sep)
+    #   df1 <- read.csv(file$datapath,
+    #     header = input$header,
+    #     sep = input$sepMat
+    #   )
+    #   rownames(df1) <- df1[, 1]
+    #   # df1[, 1] <- NULL
+    # }
+    # else if (fileTypeFile1 == "tsv") {
+    #   df1 <- read_tsv(file$datapath,
+    #     header = input$header
+    #   )
+    #   rownames(df1) <- df1[, 1]
+    #   # df1[, 1] <- NULL
+    # }
+    # else {
+    #   df1 <- load(file$datapath)
+    # }
+    # 
     w1$hide()
-    df1
+     df1
   })
 
   data1Display <- reactive({
@@ -219,27 +222,28 @@ server <- function(input, output, session) {
     req(file)
     # when reading semicolon separated files,
     # having a comma separator causes `read.csv` to error
-    if (fileTypeFile1 == "csv") {
-      # df1 <- read_csv(file$datapath,
-      #                   header = input$header,
-      #                   sep = input$sep)
-      df1 <- read.csv(file$datapath,
-        header = input$header,
-        sep = input$sepMat
-      )
-      rownames(df1) <- df1[, 1]
-      # df1[, 1] <- NULL
-    }
-    else if (fileTypeFile1 == "tsv") {
-      df1 <- read_tsv(file$datapath,
-        header = input$header
-      )
-      rownames(df1) <- df1[, 1]
-      # df1[, 1] <- NULL
-    }
-    else {
-      df1 <- load(file$datapath)
-    }
+    df1 <- fread(file$datapath, header = input$header, sep = input$sepMat)
+    # if (fileTypeFile1 == "csv") {
+    #   # df1 <- read_csv(file$datapath,
+    #   #                   header = input$header,
+    #   #                   sep = input$sep)
+    #   df1 <- read.csv(file$datapath,
+    #     header = input$header,
+    #     sep = input$sepMat
+    #   )
+    #   rownames(df1) <- df1[, 1]
+    #   # df1[, 1] <- NULL
+    # }
+    # else if (fileTypeFile1 == "tsv") {
+    #   df1 <- read_tsv(file$datapath,
+    #     header = input$header
+    #   )
+    #   rownames(df1) <- df1[, 1]
+    #   # df1[, 1] <- NULL
+    # }
+    # else {
+    #   df1 <- load(file$datapath)
+    # }
     df1
   })
 
@@ -314,29 +318,32 @@ server <- function(input, output, session) {
 
     fileTypeFile1 <- tools::file_ext(file$datapath)
     req(file)
+    
+    df1 <- fread(file$datapath, header = input$header, sep = input$sepMat)
+    
     # when reading semicolon separated files,
     # having a comma separator causes `read.csv` to error
-    if (fileTypeFile1 == "csv") {
-      # df1 <- read_csv(file$datapath,
-      #                   header = input$header,
-      #                   sep = input$sep)
-      df1 <- read.csv(file$datapath,
-        header = input$header,
-        sep = input$sepMat
-      )
-      rownames(df1) <- df1[, 1]
-      df1[, 1] <- NULL
-    }
-    else if (fileTypeFile1 == "tsv") {
-      df1 <- read_tsv(file$datapath,
-        header = input$header
-      )
-      rownames(df1) <- df1[, 1]
-      df1[, 1] <- NULL
-    }
-    else {
-      df1 <- load(file$datapath)
-    }
+    # if (fileTypeFile1 == "csv") {
+    #   # df1 <- read_csv(file$datapath,
+    #   #                   header = input$header,
+    #   #                   sep = input$sep)
+    #   df1 <- read.csv(file$datapath,
+    #     header = input$header,
+    #     sep = input$sepMat
+    #   )
+    #   rownames(df1) <- df1[, 1]
+    #   df1[, 1] <- NULL
+    # }
+    # else if (fileTypeFile1 == "tsv") {
+    #   df1 <- read_tsv(file$datapath,
+    #     header = input$header
+    #   )
+    #   rownames(df1) <- df1[, 1]
+    #   df1[, 1] <- NULL
+    # }
+    # else {
+    #   df1 <- load(file$datapath)
+    # }
 
     w1$hide()
     df1
@@ -355,27 +362,29 @@ server <- function(input, output, session) {
 
     fileTypeFile2 <- tools::file_ext(file$datapath)
     req(file)
-    if (fileTypeFile2 == "csv") {
-      df2 <- read.csv(file$datapath,
-        header = input$header,
-        sep = input$sepMeta
-      )
-      # df2 <- read_csv(file$datapath,
-      #                   header = input$header,
-      #                   sep = input$sep)
-    }
-    else if (fileTypeFile2 == "tsv") {
-      df2 <- read_tsv(file$datapath,
-        header = input$header
-      )
-    }
-    else {
-      df2 <- load(file$datapath)
-    }
-    updateSelectInput(session, "metadataCellType",
-      choices = c(NA, colnames(df2)),
-      selected = NA
-    )
+    
+    df2 <- fread(file$datapath, header = input$header, sep = input$sepMeta)
+    # if (fileTypeFile2 == "csv") {
+    #   df2 <- read.csv(file$datapath,
+    #     header = input$header,
+    #     sep = input$sepMeta
+    #   )
+    #   # df2 <- read_csv(file$datapath,
+    #   #                   header = input$header,
+    #   #                   sep = input$sep)
+    # }
+    # else if (fileTypeFile2 == "tsv") {
+    #   df2 <- read_tsv(file$datapath,
+    #     header = input$header
+    #   )
+    # }
+    # else {
+    #   df2 <- load(file$datapath)
+    # }
+    # updateSelectInput(session, "metadataCellType",
+    #   choices = c(NA, colnames(df2)),
+    #   selected = NA
+    # )
 
     w2$hide()
     df2
