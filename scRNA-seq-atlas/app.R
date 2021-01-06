@@ -1,4 +1,5 @@
 library(shiny)
+library(shinyjs)
 library(waiter)
 library(dplyr)
 library(readr)
@@ -25,16 +26,31 @@ ui <- dashboardPage(
   dashboardHeader(title = "Clustifyr RShiny App"),
   dashboardSidebar(
     sidebarMenu(
+      id = "tabs",
       menuItem("Dashboard", tabName = "dashboard", icon = icon("dashboard")),
       menuItem("Load Matrix", tabName = "matrixLoad", icon = icon("th")),
       menuItem("Load Metadata", tabName = "metadataLoad", icon = icon("th")),
       menuItem("Choose cluster and ref column", tabName = "clusterRefCol", icon = icon("th"))
     )
+    
   ),
   dashboardBody(
     tabItems(
       tabItem(
         tabName = "dashboard",
+        # js stuff ----
+        useShinyjs(),
+        tags$head(tags$style(HTML('
+            .skin-blue .sidebar .inactiveLink {
+                color: black;
+                opacity : 25%;
+            }'
+        ))),
+        tags$head(tags$style(".inactiveLink {
+                           pointer-events: none;
+                           cursor: not-allowed;
+                           }")),
+        
         # waiter stuff ----
         use_waiter(),
 
@@ -251,6 +267,7 @@ server <- function(input, output, session) {
   rv <- reactiveValues()
   rv$matrixloc <- NULL
   rv$metaloc <- NULL
+  rv$step <- 0
 
 
   # waiter checkpoints
@@ -364,27 +381,27 @@ server <- function(input, output, session) {
     req(file)
     
     df2 <- fread(file$datapath, header = input$header, sep = input$sepMeta)
-    # if (fileTypeFile2 == "csv") {
-    #   df2 <- read.csv(file$datapath,
-    #     header = input$header,
-    #     sep = input$sepMeta
-    #   )
-    #   # df2 <- read_csv(file$datapath,
-    #   #                   header = input$header,
-    #   #                   sep = input$sep)
-    # }
-    # else if (fileTypeFile2 == "tsv") {
-    #   df2 <- read_tsv(file$datapath,
-    #     header = input$header
-    #   )
-    # }
-    # else {
-    #   df2 <- load(file$datapath)
-    # }
-    # updateSelectInput(session, "metadataCellType",
-    #   choices = c(NA, colnames(df2)),
-    #   selected = NA
-    # )
+#     if (fileTypeFile2 == "csv") {
+#       df2 <- read.csv(file$datapath,
+#         header = input$header,
+#         sep = input$sepMeta
+#       )
+#       # df2 <- read_csv(file$datapath,
+#       #                   header = input$header,
+#       #                   sep = input$sep)
+#     }
+#     else if (fileTypeFile2 == "tsv") {
+#       df2 <- read_tsv(file$datapath,
+#         header = input$header
+#       )
+#     }
+#     else {
+#       df2 <- load(file$datapath)
+#     }
+#     updateSelectInput(session, "metadataCellType",
+#       choices = c("", colnames(df2)),
+#       selected = ""
+#     )
 
     w2$hide()
     df2
@@ -513,6 +530,9 @@ server <- function(input, output, session) {
   # })
 
   dataRef <- reactive({
+    if (input$metadataCellType == "") {
+      return(NULL)
+    }
     w3$show()
     reference_matrix <- average_clusters(mat = data1(), metadata = data2()[[input$metadataCellType]], if_log = FALSE)
     w3$hide()
@@ -520,6 +540,9 @@ server <- function(input, output, session) {
   })
 
   dataClustify <- reactive({
+    if (input$metadataCellType == "") {
+      return(NULL)
+    }
     w4$show()
     benchmarkRef <- refs[[ref_dict[input$dataHubReference]]]
 
@@ -542,18 +565,27 @@ server <- function(input, output, session) {
 
   output$reference <- renderTable({
     reference_matrix <- dataRef()
+    if (is.null(reference_matrix)) {
+      return(NULL)
+    }
     head(rownames_to_column(as.data.frame(reference_matrix), input$metadataCellType))
   })
 
   output$clustify <- renderTable({
     res <- dataClustify()
+    if (is.null(res)) {
+      return(NULL)
+    }
     head(rownames_to_column(as.data.frame(res), input$metadataCellType))
   })
 
   # Make plots such as heat maps to compare benchmarking with clustify with actual cell types
 
   output$hmap <- renderPlot({
-
+    if (input$metadataCellType == "") {
+      return(NULL)
+    }
+    
     # could expose as an option
     cutoff_to_display <- 0.5
     tmp_mat <<- dataClustify()
@@ -613,6 +645,16 @@ server <- function(input, output, session) {
       rv$metaloc <- list(datapath = "../data/example-input/meta-data.csv")
     }
   )
+  
+  # disable menu at load
+  addCssClass(selector = "a[data-value='clusterRefCol']", class = "inactiveLink")
+  addCssClass(selector = "ul li:eq(3)", class = "inactiveLink")
+  
+  # check if data is loaded
+  observeEvent(!is.null(data1()) + !is.null(data2()) == 2, {
+    removeCssClass(selector = "a[data-value='clusterRefCol']", class = "inactiveLink")
+    removeClass(selector = "ul li:eq(3)", class = "inactiveLink")
+  })
 }
 
 # Create Shiny app ----
