@@ -398,10 +398,10 @@ server <- function(input, output, session) {
 #     else {
 #       df2 <- load(file$datapath)
 #     }
-#     updateSelectInput(session, "metadataCellType",
-#       choices = c("", colnames(df2)),
-#       selected = ""
-#     )
+    updateSelectInput(session, "metadataCellType",
+      choices = c("", colnames(df2)),
+      selected = ""
+    )
 
     w2$hide()
     df2
