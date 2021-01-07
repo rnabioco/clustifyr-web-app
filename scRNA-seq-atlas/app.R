@@ -10,6 +10,8 @@ library(ExperimentHub)
 library(Seurat)
 library(shinydashboard)
 library(tidyverse)
+library(data.table)
+library(R.utils)
 # library(ComplexHeatmap)
 
 options(shiny.maxRequestSize = 1500 * 1024^2)
@@ -162,6 +164,7 @@ ui <- dashboardPage(
         helpText("Choose reference cell atlas for clustify function"),
         hr(),
         helpText("Choose cell reference for clustify function"),
+        textOutput("clustifym"),
         downloadButton("downloadReference", "Download reference matrix"),
         downloadButton("downloadClustify", "Download clustify matrix"),
         actionButton("uploadClustify", "Upload reference matrix"),
@@ -194,35 +197,37 @@ server <- function(input, output, session) {
       w1$show()
       print(file)
     }
-
-    fileTypeFile1 <- tools::file_ext(file$datapath)
-    req(file)
-    # when reading semicolon separated files,
-    # having a comma separator causes `read.csv` to error
-    if (fileTypeFile1 == "csv") {
-      # df1 <- read_csv(file$datapath,
-      #                   header = input$header,
-      #                   sep = input$sep)
-      df1 <- read.csv(file$datapath,
-        header = input$header,
-        sep = input$sepMat
-      )
-      rownames(df1) <- df1[, 1]
-      # df1[, 1] <- NULL
-    }
-    else if (fileTypeFile1 == "tsv") {
-      df1 <- read_tsv(file$datapath,
-        header = input$header
-      )
-      rownames(df1) <- df1[, 1]
-      # df1[, 1] <- NULL
-    }
-    else {
-      df1 <- load(file$datapath)
-    }
-
+    
+    df1 <- fread(file$datapath, header = input$header, sep = input$sepMat)
+    
+    # fileTypeFile1 <- tools::file_ext(file$datapath)
+    # req(file)
+    # # when reading semicolon separated files,
+    # # having a comma separator causes `read.csv` to error
+    # if (fileTypeFile1 == "csv") {
+    #   # df1 <- read_csv(file$datapath,
+    #   #                   header = input$header,
+    #   #                   sep = input$sep)
+    #   df1 <- read.csv(file$datapath,
+    #     header = input$header,
+    #     sep = input$sepMat
+    #   )
+    #   rownames(df1) <- df1[, 1]
+    #   # df1[, 1] <- NULL
+    # }
+    # else if (fileTypeFile1 == "tsv") {
+    #   df1 <- read_tsv(file$datapath,
+    #     header = input$header
+    #   )
+    #   rownames(df1) <- df1[, 1]
+    #   # df1[, 1] <- NULL
+    # }
+    # else {
+    #   df1 <- load(file$datapath)
+    # }
+    # 
     w1$hide()
-    df1
+     df1
   })
 
   data1Display <- reactive({
@@ -235,27 +240,28 @@ server <- function(input, output, session) {
     req(file)
     # when reading semicolon separated files,
     # having a comma separator causes `read.csv` to error
-    if (fileTypeFile1 == "csv") {
-      # df1 <- read_csv(file$datapath,
-      #                   header = input$header,
-      #                   sep = input$sep)
-      df1 <- read.csv(file$datapath,
-        header = input$header,
-        sep = input$sepMat
-      )
-      rownames(df1) <- df1[, 1]
-      # df1[, 1] <- NULL
-    }
-    else if (fileTypeFile1 == "tsv") {
-      df1 <- read_tsv(file$datapath,
-        header = input$header
-      )
-      rownames(df1) <- df1[, 1]
-      # df1[, 1] <- NULL
-    }
-    else {
-      df1 <- load(file$datapath)
-    }
+    df1 <- fread(file$datapath)# , header = input$header, sep = input$sepMat)
+    # if (fileTypeFile1 == "csv") {
+    #   # df1 <- read_csv(file$datapath,
+    #   #                   header = input$header,
+    #   #                   sep = input$sep)
+    #   df1 <- read.csv(file$datapath,
+    #     header = input$header,
+    #     sep = input$sepMat
+    #   )
+    #   rownames(df1) <- df1[, 1]
+    #   # df1[, 1] <- NULL
+    # }
+    # else if (fileTypeFile1 == "tsv") {
+    #   df1 <- read_tsv(file$datapath,
+    #     header = input$header
+    #   )
+    #   rownames(df1) <- df1[, 1]
+    #   # df1[, 1] <- NULL
+    # }
+    # else {
+    #   df1 <- load(file$datapath)
+    # }
     df1
   })
 
@@ -264,6 +270,7 @@ server <- function(input, output, session) {
   rv$matrixloc <- NULL
   rv$metaloc <- NULL
   rv$step <- 0
+  rv$clustifym <- "not yet run"
 
 
   # waiter checkpoints
@@ -331,29 +338,38 @@ server <- function(input, output, session) {
 
     fileTypeFile1 <- tools::file_ext(file$datapath)
     req(file)
+    
+    df1 <- fread(file$datapath) %>% # , header = input$header, sep = input$sepMat) %>% 
+      as.data.frame()
+    
+    if (!has_rownames(df1)) {
+        rownames(df1) <- df1[, 1]
+        df1[, 1] <- NULL
+    }
+    
     # when reading semicolon separated files,
     # having a comma separator causes `read.csv` to error
-    if (fileTypeFile1 == "csv") {
-      # df1 <- read_csv(file$datapath,
-      #                   header = input$header,
-      #                   sep = input$sep)
-      df1 <- read.csv(file$datapath,
-        header = input$header,
-        sep = input$sepMat
-      )
-      rownames(df1) <- df1[, 1]
-      df1[, 1] <- NULL
-    }
-    else if (fileTypeFile1 == "tsv") {
-      df1 <- read_tsv(file$datapath,
-        header = input$header
-      )
-      rownames(df1) <- df1[, 1]
-      df1[, 1] <- NULL
-    }
-    else {
-      df1 <- load(file$datapath)
-    }
+    # if (fileTypeFile1 == "csv") {
+    #   # df1 <- read_csv(file$datapath,
+    #   #                   header = input$header,
+    #   #                   sep = input$sep)
+    #   df1 <- read.csv(file$datapath,
+    #     header = input$header,
+    #     sep = input$sepMat
+    #   )
+    #   rownames(df1) <- df1[, 1]
+    #   df1[, 1] <- NULL
+    # }
+    # else if (fileTypeFile1 == "tsv") {
+    #   df1 <- read_tsv(file$datapath,
+    #     header = input$header
+    #   )
+    #   rownames(df1) <- df1[, 1]
+    #   df1[, 1] <- NULL
+    # }
+    # else {
+    #   df1 <- load(file$datapath)
+    # }
 
     w1$hide()
     df1
@@ -372,23 +388,31 @@ server <- function(input, output, session) {
 
     fileTypeFile2 <- tools::file_ext(file$datapath)
     req(file)
-    if (fileTypeFile2 == "csv") {
-      df2 <- read.csv(file$datapath,
-        header = input$header,
-        sep = input$sepMeta
-      )
-      # df2 <- read_csv(file$datapath,
-      #                   header = input$header,
-      #                   sep = input$sep)
+    
+    df2 <- fread(file$datapath) %>% #, header = input$header, sep = input$sepMeta) %>% 
+      as.data.frame()
+    
+    if (!has_rownames(df2)) {
+      rownames(df2) <- df2[, 1]
+      df2[, 1] <- NULL
     }
-    else if (fileTypeFile2 == "tsv") {
-      df2 <- read_tsv(file$datapath,
-        header = input$header
-      )
-    }
-    else {
-      df2 <- load(file$datapath)
-    }
+#     if (fileTypeFile2 == "csv") {
+#       df2 <- read.csv(file$datapath,
+#         header = input$header,
+#         sep = input$sepMeta
+#       )
+#       # df2 <- read_csv(file$datapath,
+#       #                   header = input$header,
+#       #                   sep = input$sep)
+#     }
+#     else if (fileTypeFile2 == "tsv") {
+#       df2 <- read_tsv(file$datapath,
+#         header = input$header
+#       )
+#     }
+#     else {
+#       df2 <- load(file$datapath)
+#     }
     updateSelectInput(session, "metadataCellType",
       choices = c("", colnames(df2)),
       selected = ""
@@ -543,12 +567,16 @@ server <- function(input, output, session) {
 
     metadataCol <- data2()[[input$metadataCellType]]
     # use for classification of cell types
-    res <- clustify(
-      input = matrixSeuratObject@assays$RNA@data,
-      metadata = metadataCol,
-      ref_mat = benchmarkRef,
-      query_genes = VariableFeatures(matrixSeuratObject)
+    messages <<- capture.output(
+      res <- clustify(
+        input = matrixSeuratObject@assays$RNA@data,
+        metadata = metadataCol,
+        ref_mat = benchmarkRef,
+        query_genes = VariableFeatures(matrixSeuratObject)
+        ),
+      type = "message"
     )
+    rv$clustifym <<- messages
 
     w4$hide()
     res
@@ -636,6 +664,8 @@ server <- function(input, output, session) {
       rv$metaloc <- list(datapath = "../data/example-input/meta-data.csv")
     }
   )
+  
+  output$clustifym <- renderText(rv$clustifym)
   
   # disable menu at load
   addCssClass(selector = "a[data-value='clusterRefCol']", class = "inactiveLink")
