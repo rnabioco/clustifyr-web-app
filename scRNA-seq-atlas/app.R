@@ -239,7 +239,7 @@ server <- function(input, output, session) {
     req(file)
     # when reading semicolon separated files,
     # having a comma separator causes `read.csv` to error
-    df1 <- fread(file$datapath, header = input$header, sep = input$sepMat)
+    df1 <- fread(file$datapath)# , header = input$header, sep = input$sepMat)
     # if (fileTypeFile1 == "csv") {
     #   # df1 <- read_csv(file$datapath,
     #   #                   header = input$header,
@@ -337,7 +337,7 @@ server <- function(input, output, session) {
     fileTypeFile1 <- tools::file_ext(file$datapath)
     req(file)
     
-    df1 <- fread(file$datapath, header = input$header, sep = input$sepMat) %>% 
+    df1 <- fread(file$datapath) %>% # , header = input$header, sep = input$sepMat) %>% 
       as.data.frame()
     
     if (!has_rownames(df1)) {
@@ -387,7 +387,7 @@ server <- function(input, output, session) {
     fileTypeFile2 <- tools::file_ext(file$datapath)
     req(file)
     
-    df2 <- fread(file$datapath, header = input$header, sep = input$sepMeta) %>% 
+    df2 <- fread(file$datapath) %>% #, header = input$header, sep = input$sepMeta) %>% 
       as.data.frame()
     
     if (!has_rownames(df2)) {
