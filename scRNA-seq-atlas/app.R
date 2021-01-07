@@ -164,6 +164,7 @@ ui <- dashboardPage(
         helpText("Choose reference cell atlas for clustify function"),
         hr(),
         helpText("Choose cell reference for clustify function"),
+        textOutput("clustifym"),
         downloadButton("downloadReference", "Download reference matrix"),
         downloadButton("downloadClustify", "Download clustify matrix"),
         actionButton("uploadClustify", "Upload reference matrix"),
@@ -269,6 +270,7 @@ server <- function(input, output, session) {
   rv$matrixloc <- NULL
   rv$metaloc <- NULL
   rv$step <- 0
+  rv$clustifym <- "not yet run"
 
 
   # waiter checkpoints
@@ -565,12 +567,16 @@ server <- function(input, output, session) {
 
     metadataCol <- data2()[[input$metadataCellType]]
     # use for classification of cell types
-    res <- clustify(
-      input = matrixSeuratObject@assays$RNA@data,
-      metadata = metadataCol,
-      ref_mat = benchmarkRef,
-      query_genes = VariableFeatures(matrixSeuratObject)
+    messages <<- capture.output(
+      res <- clustify(
+        input = matrixSeuratObject@assays$RNA@data,
+        metadata = metadataCol,
+        ref_mat = benchmarkRef,
+        query_genes = VariableFeatures(matrixSeuratObject)
+        ),
+      type = "message"
     )
+    rv$clustifym <<- messages
 
     w4$hide()
     res
@@ -658,6 +664,8 @@ server <- function(input, output, session) {
       rv$metaloc <- list(datapath = "../data/example-input/meta-data.csv")
     }
   )
+  
+  output$clustifym <- renderText(rv$clustifym)
   
   # disable menu at load
   addCssClass(selector = "a[data-value='clusterRefCol']", class = "inactiveLink")
