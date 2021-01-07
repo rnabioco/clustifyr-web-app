@@ -51,6 +51,23 @@ ui <- dashboardPage(
                            pointer-events: none;
                            cursor: not-allowed;
                            }")),
+        tags$head(tags$style(HTML('
+            .skin-blue .sidebar .doneLink {
+                color: green;
+            }'
+        ))),
+        tags$head(tags$style(HTML('
+            .skin-blue .sidebar .doneLink.active > a {
+                color: green;
+                border-left-color: green;
+            }'
+        ))),
+        tags$head(tags$style(HTML('
+            .skin-blue .sidebar .doneLink:hover {
+                color: green;
+                border-left-color: green;
+            }'
+        ))),
         
         # waiter stuff ----
         use_waiter(),
@@ -164,7 +181,13 @@ ui <- dashboardPage(
         helpText("Choose reference cell atlas for clustify function"),
         hr(),
         helpText("Choose cell reference for clustify function"),
-        textOutput("clustifym"),
+        box(id = "box_clustifym",
+            collapsible = TRUE,
+            collapsed = TRUE,
+            solidHeader = TRUE,
+            status = "info",
+            title = "clustifyr messages",
+            htmlOutput("clustifym")),
         downloadButton("downloadReference", "Download reference matrix"),
         downloadButton("downloadClustify", "Download clustify matrix"),
         actionButton("uploadClustify", "Upload reference matrix"),
@@ -181,96 +204,13 @@ ui <- dashboardPage(
 
 # Define server logic to read selected file ----
 server <- function(input, output, session) {
-  data1Display <- reactive({
-
-    # input$file1 will be NULL initially. After the user selects
-    # and uploads a file, head of that data file by default,
-    # or all rows if selected, will be shown.
-
-    if (!is.null(input$file1)) {
-      rv$matrixloc <- input$file1
-    }
-
-    file <- rv$matrixloc
-
-    if (!is.null(file)) {
-      w1$show()
-      print(file)
-    }
-    
-    df1 <- fread(file$datapath, header = input$header, sep = input$sepMat)
-    
-    # fileTypeFile1 <- tools::file_ext(file$datapath)
-    # req(file)
-    # # when reading semicolon separated files,
-    # # having a comma separator causes `read.csv` to error
-    # if (fileTypeFile1 == "csv") {
-    #   # df1 <- read_csv(file$datapath,
-    #   #                   header = input$header,
-    #   #                   sep = input$sep)
-    #   df1 <- read.csv(file$datapath,
-    #     header = input$header,
-    #     sep = input$sepMat
-    #   )
-    #   rownames(df1) <- df1[, 1]
-    #   # df1[, 1] <- NULL
-    # }
-    # else if (fileTypeFile1 == "tsv") {
-    #   df1 <- read_tsv(file$datapath,
-    #     header = input$header
-    #   )
-    #   rownames(df1) <- df1[, 1]
-    #   # df1[, 1] <- NULL
-    # }
-    # else {
-    #   df1 <- load(file$datapath)
-    # }
-    # 
-    w1$hide()
-     df1
-  })
-
-  data1Display <- reactive({
-
-    # input$file1 will be NULL initially. After the user selects
-    # and uploads a file, head of that data file by default,
-    # or all rows if selected, will be shown.
-    file <- input$file1
-    fileTypeFile1 <- tools::file_ext(file$datapath)
-    req(file)
-    # when reading semicolon separated files,
-    # having a comma separator causes `read.csv` to error
-    df1 <- fread(file$datapath)# , header = input$header, sep = input$sepMat)
-    # if (fileTypeFile1 == "csv") {
-    #   # df1 <- read_csv(file$datapath,
-    #   #                   header = input$header,
-    #   #                   sep = input$sep)
-    #   df1 <- read.csv(file$datapath,
-    #     header = input$header,
-    #     sep = input$sepMat
-    #   )
-    #   rownames(df1) <- df1[, 1]
-    #   # df1[, 1] <- NULL
-    # }
-    # else if (fileTypeFile1 == "tsv") {
-    #   df1 <- read_tsv(file$datapath,
-    #     header = input$header
-    #   )
-    #   rownames(df1) <- df1[, 1]
-    #   # df1[, 1] <- NULL
-    # }
-    # else {
-    #   df1 <- load(file$datapath)
-    # }
-    df1
-  })
 
   # reactive file location to make interactivity easier
   rv <- reactiveValues()
   rv$matrixloc <- NULL
   rv$metaloc <- NULL
   rv$step <- 0
-  rv$clustifym <- "not yet run"
+  rv$clustifym <- "clustifyr not yet run"
 
 
   # waiter checkpoints
@@ -346,30 +286,6 @@ server <- function(input, output, session) {
         rownames(df1) <- df1[, 1]
         df1[, 1] <- NULL
     }
-    
-    # when reading semicolon separated files,
-    # having a comma separator causes `read.csv` to error
-    # if (fileTypeFile1 == "csv") {
-    #   # df1 <- read_csv(file$datapath,
-    #   #                   header = input$header,
-    #   #                   sep = input$sep)
-    #   df1 <- read.csv(file$datapath,
-    #     header = input$header,
-    #     sep = input$sepMat
-    #   )
-    #   rownames(df1) <- df1[, 1]
-    #   df1[, 1] <- NULL
-    # }
-    # else if (fileTypeFile1 == "tsv") {
-    #   df1 <- read_tsv(file$datapath,
-    #     header = input$header
-    #   )
-    #   rownames(df1) <- df1[, 1]
-    #   df1[, 1] <- NULL
-    # }
-    # else {
-    #   df1 <- load(file$datapath)
-    # }
 
     w1$hide()
     df1
@@ -396,23 +312,7 @@ server <- function(input, output, session) {
       rownames(df2) <- df2[, 1]
       df2[, 1] <- NULL
     }
-#     if (fileTypeFile2 == "csv") {
-#       df2 <- read.csv(file$datapath,
-#         header = input$header,
-#         sep = input$sepMeta
-#       )
-#       # df2 <- read_csv(file$datapath,
-#       #                   header = input$header,
-#       #                   sep = input$sep)
-#     }
-#     else if (fileTypeFile2 == "tsv") {
-#       df2 <- read_tsv(file$datapath,
-#         header = input$header
-#       )
-#     }
-#     else {
-#       df2 <- load(file$datapath)
-#     }
+
     updateSelectInput(session, "metadataCellType",
       choices = c("", colnames(df2)),
       selected = ""
@@ -423,37 +323,7 @@ server <- function(input, output, session) {
   })
 
   output$contents1 <- renderTable({
-
-    # input$file1 will be NULL initially. After the user selects
-    # and uploads a file, head of that data file by default,
-    # or all rows if selected, will be shown.
-    # file <- input$file1
-    # fileTypeFile1 <- tools::file_ext(file$datapath)
-    # req(file)
-    # # when reading semicolon separated files,
-    # # having a comma separator causes `read.csv` to error
-    #     if (fileTypeFile1 == "csv")
-    #     {
-    #         df1 <- read_csv(file$datapath,
-    #                         header = input$header,
-    #                         sep = input$sep,
-    #                         quote = input$quote)
-    #         rownames(df1) <- df1[, 1]
-    #         df1[, 1] <- NULL
-    #     }
-    #     else if (fileTypeFile1 == "tsv")
-    #     {
-    #         df1 <- read_tsv(file$datapath,
-    #                         header = input$header,
-    #                         quote = input$quote)
-    #         rownames(df1) <- df1[, 1]
-    #         df1[, 1] <- NULL
-    #     }
-    #     else
-    #     {
-    #         df1 <- load(file$datapath)
-    #     }
-    df1 <- data1Display()
+    df1 <- data1()
     # file 1
     if (input$dispMat == "head") {
       return(head(df1, cols = 5))
@@ -464,27 +334,6 @@ server <- function(input, output, session) {
   })
 
   output$contents2 <- renderTable({
-    # file <- input$file2
-    # fileTypeFile2 <- tools::file_ext(file$datapath)
-    # req(file)
-    # if (fileTypeFile2 == "csv")
-    # {
-    #     df2 <- read_delim(file$datapath,
-    #                      ",",
-    #                     header = input$header,
-    #                     sep = input$sep,
-    #                     quote = input$quote)
-    # }
-    # else if (fileTypeFile2 == "tsv")
-    # {
-    #     df2 <- read_tsv(file$datapath,
-    #                     header = input$header,
-    #                     quote = input$quote)
-    # }
-    # else
-    # {
-    #     df2 <- load(file$datapath)
-    # }
     df2 <- data2()
     # file 2
     if (input$dispMeta == "head") {
@@ -516,34 +365,7 @@ server <- function(input, output, session) {
       easyClose = TRUE
     ))
   })
-  # dataRef <- reactive({
-  #     reference_matrix <- average_clusters(mat = data1(), metadata = data2()[[input$metadataCellType]], if_log = FALSE)
-  #     reference_matrix
-  # })
-
-  # dataClustify <- reactive({
-  #    eh <- ExperimentHub()
-  # query
-  #    refs <- query(eh, "clustifyrdatahub")
-  # refs <- listResources(eh, "clustifyrdatahub")
-  #    benchmarkRef <- loadResources(eh, "clustifyrdatahub", input$dataHubReference)[[1]]
-
-  #    UMIMatrix <- data1()
-  #    matrixSeuratObject <- CreateSeuratObject(counts = UMIMatrix, project = "Seurat object matrix", min.cells = 0, min.features = 0)
-  #   matrixSeuratObject <- NormalizeData(matrixSeuratObject)
-  #   matrixSeuratObject <- FindVariableFeatures(matrixSeuratObject, selection.method = "vst", nfeatures = 2000)
-
-  #  metadataCol <- data2()[[input$metadataCellType]]
-  #   # use for classification of cell types
-  # res <- clustify(
-  #   input = matrixSeuratObject@assays$RNA@data,
-  #    metadata = metadataCol,
-  #  ref_mat = benchmarkRef,
-  # query_genes = VariableFeatures(matrixSeuratObject)
-  # )
-  # res
-  # })
-
+  
   dataRef <- reactive({
     if (input$metadataCellType == "") {
       return(NULL)
@@ -647,7 +469,7 @@ server <- function(input, output, session) {
   )
   output$downloadClustify <- downloadHandler(
     filename = function() {
-      paste("clustify-", Sys.Date(), ".csv", sep = "")
+      cat("clustify-", Sys.Date(), ".csv", sep = "")
     },
     content = function(file) {
       write.csv(clustifyDownload(), file)
@@ -662,10 +484,13 @@ server <- function(input, output, session) {
       message("loading prepackaged data")
       rv$matrixloc <- list(datapath = "../data/example-input/matrix.csv")
       rv$metaloc <- list(datapath = "../data/example-input/meta-data.csv")
+      updateTabItems(session, "tabs", "clusterRefCol")
     }
   )
   
-  output$clustifym <- renderText(rv$clustifym)
+  output$clustifym <- renderUI(
+    HTML(paste0(c(rv$clustifym, ""), collapse = "<br/><br/>"))
+  )
   
   # disable menu at load
   addCssClass(selector = "a[data-value='clusterRefCol']", class = "inactiveLink")
@@ -675,6 +500,16 @@ server <- function(input, output, session) {
   observeEvent(!is.null(data1()) + !is.null(data2()) == 2, {
     removeCssClass(selector = "a[data-value='clusterRefCol']", class = "inactiveLink")
     removeClass(selector = "ul li:eq(3)", class = "inactiveLink")
+  })
+  
+  observeEvent(!is.null(data1()), {
+    addCssClass(selector = "a[data-value='matrixLoad']", class = "doneLink")
+    addClass(selector = "ul li:eq(1)", class = "doneLink")
+  })
+  
+  observeEvent(!is.null(data2()), {
+    addCssClass(selector = "a[data-value='metadataLoad']", class = "doneLink")
+    addClass(selector = "ul li:eq(2)", class = "doneLink")
   })
 }
 
