@@ -20,6 +20,20 @@ eh <- ExperimentHub()
 refs <- query(eh, "clustifyrdatahub")
 ref_dict <- refs$ah_id %>% setNames(refs$title)
 
+make_button <- function(tbl){
+  function(i){
+    sprintf(
+      '<button id="button_%s_%d" type="button" onclick="%s">Load</button>', 
+      tbl, i, "Shiny.setInputValue('button', this.id);")
+  }
+}
+
+get_file_size <- function(url) {
+  response <- httr::HEAD(url)
+  size <- httr::headers(response)[["Content-Length"]] %>% as.numeric()
+  utils:::format.object_size(size, "auto")
+}
+
 list_geo <- function(id) {
   # look for files
   out <- tryCatch(suppressMessages(GEOquery::getGEOSuppFiles(id,
@@ -33,7 +47,9 @@ list_geo <- function(id) {
   out <- data.frame(file = out) %>% 
     mutate(link = str_c("https://ftp.ncbi.nlm.nih.gov/geo/series/GSE",
                         str_extract(file, "[0-9]{3}"),
-                        "nnn/GSE113049/suppl/",
+                        "nnn/",
+                        id,
+                        "/suppl/",
                         file))
   
   out
@@ -175,95 +191,13 @@ ui <- fluidPage(
 
 # Define server logic to read selected file ----
 server <- function(input, output, session) {
-
-    data1Display <- reactive({
-
-        # input$file1 will be NULL initially. After the user selects
-        # and uploads a file, head of that data file by default,
-        # or all rows if selected, will be shown.
-        
-        if (!is.null(input$file1)) {
-          rv$matrixloc <- input$file1
-        }
-        
-        file <- rv$matrixloc
-        
-        if (!is.null(file)) {
-          w1$show()
-          print(file)
-        }
-        
-        fileTypeFile1 <- tools::file_ext(file$datapath)
-        req(file)
-        # when reading semicolon separated files,
-        # having a comma separator causes `read.csv` to error
-        if (fileTypeFile1 == "csv")
-        {
-            # df1 <- read_csv(file$datapath,
-            #                   header = input$header,
-            #                   sep = input$sep)
-            df1 <- read.csv(file$datapath,
-                            header = input$header,
-                            sep = input$sep)
-            rownames(df1) <- df1[, 1]
-            #df1[, 1] <- NULL
-        }
-        else if (fileTypeFile1 == "tsv")
-        {
-            df1 <- read_tsv(file$datapath,
-                            header = input$header)
-            rownames(df1) <- df1[, 1]
-            #df1[, 1] <- NULL
-        }
-        else
-        {
-            df1 <- load(file$datapath)
-        }
-        
-        w1$hide()
-        df1
-    })
-    
-    data1Display <- reactive({
-        
-        # input$file1 will be NULL initially. After the user selects
-        # and uploads a file, head of that data file by default,
-        # or all rows if selected, will be shown.
-        file <- input$file1
-        fileTypeFile1 <- tools::file_ext(file$datapath)
-        req(file)
-        # when reading semicolon separated files,
-        # having a comma separator causes `read.csv` to error
-        if (fileTypeFile1 == "csv")
-        {
-            # df1 <- read_csv(file$datapath,
-            #                   header = input$header,
-            #                   sep = input$sep)
-            df1 <- read.csv(file$datapath,
-                            header = input$header,
-                            sep = input$sep)
-            rownames(df1) <- df1[, 1]
-            #df1[, 1] <- NULL
-        }
-        else if (fileTypeFile1 == "tsv")
-        {
-            df1 <- read_tsv(file$datapath,
-                            header = input$header)
-            rownames(df1) <- df1[, 1]
-            #df1[, 1] <- NULL
-        }
-        else
-        {
-            df1 <- load(file$datapath)
-        }
-        df1
-    })
   
     # reactive file location to make interactivity easier
     rv <- reactiveValues()
     rv$matrixloc <- NULL
     rv$metaloc <- NULL
-
+    rv$links <- list()
+    rv$loadinglink <- ""
     
     # waiter checkpoints
     w1 <- Waiter$new(id = "contents1",
@@ -318,33 +252,9 @@ server <- function(input, output, session) {
           print(file)
         }
         
-        fileTypeFile1 <- tools::file_ext(file$datapath)
-        req(file)
-        # when reading semicolon separated files,
-        # having a comma separator causes `read.csv` to error
-        if (fileTypeFile1 == "csv")
-        {
-            # df1 <- read_csv(file$datapath,
-            #                   header = input$header,
-            #                   sep = input$sep)
-            df1 <- read.csv(file$datapath,
-                            header = input$header,
-                            sep = input$sep)
-            rownames(df1) <- df1[, 1]
-            df1[, 1] <- NULL
-        }
-        else if (fileTypeFile1 == "tsv")
-        {
-            df1 <- read_tsv(file$datapath,
-                            header = input$header)
-            rownames(df1) <- df1[, 1]
-            df1[, 1] <- NULL
-        }
-        else
-        {
-            df1 <- load(file$datapath)
-        }
-        
+        df1 <- fread(file$datapath) %>% as.data.frame()
+        rownames(df1) <- df1[, 1]
+        df1[, 1] <- NULL
         w1$hide()
         df1
     })
@@ -421,7 +331,7 @@ server <- function(input, output, session) {
         #     {
         #         df1 <- load(file$datapath)
         #     }
-            df1 <- data1Display()
+            df1 <- data1()
             #file 1
             if(input$disp == "head") {
                 return(head(df1, cols = 5))
@@ -467,7 +377,7 @@ server <- function(input, output, session) {
         showModal(modalDialog(
             tags$caption("UMI Count Matrix"),
             DT::renderDataTable({
-                matrixRender <- head(data1Display())
+                matrixRender <- head(data1())[,1:5]
                 DT::datatable(matrixRender, escape = FALSE)
             }),
             easyClose = TRUE
@@ -520,6 +430,9 @@ server <- function(input, output, session) {
   })
   
   dataClustify <- reactive({
+    if (input$metadataCellType == "") {
+      return(NULL)
+    }
         w4$show()
         benchmarkRef <- refs[[ref_dict[input$dataHubReference]]]
         
@@ -617,17 +530,46 @@ server <- function(input, output, session) {
     observeEvent(
       input$geo,
       {
-        links <- list_geo("GSE113049")
+        rv$links <- list_geo("GSE113049")
+        links2 <- cbind(rv$links %>% mutate(size = map(link, get_file_size)) %>% select(-link),
+                        button = sapply(1:nrow(links), make_button("tbl1")), 
+                        stringsAsFactors = FALSE)
         showModal(modalDialog(
+          DT::renderDataTable(
+            data.table(links2),
+                      escape = ncol(links2)-1, fillContainer = TRUE
+              ),
           tags$caption("try to make reference from GEO id"),
-          DT::renderDataTable(preview_link(links$link[1])[, 1:5]),
-          DT::renderDataTable(preview_link(links$link[2])[, 1:5]),
+          #DT::renderDataTable(preview_link(links$link[1])[, 1:5]),
+          #DT::renderDataTable(preview_link(links$link[2])[, 1:5]),
           easyClose = TRUE
         ))
-        rv$matrixloc <- list(datapath = url(links$link[1]))
-        rv$metaloc <- list(datapath = url(links$link[2]))
+        #rv$matrixloc <- list(datapath = url(links$link[1]))
+        #rv$metaloc <- list(datapath = url(links$link[2]))
       }
     )
+  
+    observeEvent(input[["button"]], {
+      splitID <- strsplit(input[["button"]], "_")[[1]]
+      tbl <- splitID[2]
+      row <- splitID[3]
+      rv$loadinglink <<- rv$links$link[as.numeric(row)]
+      print(rv$links)
+      showModal(modalDialog(
+        title = "preview",
+        size = "s",
+        easyClose = TRUE,
+        footer = NULL,
+        DT::renderDataTable(preview_link(rv$links$link[as.numeric(row)])[, 1:5]),
+        actionButton("full", "Start full loading")
+      ))
+    })
+    
+    observeEvent(input$full, {
+      print(rv$loadinglink)
+      rv$matrixloc <- list(datapath = rv$loadinglink)
+      print(rv$matrixloc)
+      removeModal()})
 }
 
 # Create Shiny app ----
