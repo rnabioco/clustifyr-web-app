@@ -11,6 +11,7 @@ library(Seurat)
 library(shinydashboard)
 library(tidyverse)
 library(data.table)
+library(R.utils)
 # library(ComplexHeatmap)
 
 options(shiny.maxRequestSize = 1500 * 1024^2)
@@ -336,7 +337,13 @@ server <- function(input, output, session) {
     fileTypeFile1 <- tools::file_ext(file$datapath)
     req(file)
     
-    df1 <- fread(file$datapath, header = input$header, sep = input$sepMat)
+    df1 <- fread(file$datapath, header = input$header, sep = input$sepMat) %>% 
+      as.data.frame()
+    
+    if (!has_rownames(df1)) {
+        rownames(df1) <- df1[, 1]
+        df1[, 1] <- NULL
+    }
     
     # when reading semicolon separated files,
     # having a comma separator causes `read.csv` to error
@@ -380,7 +387,13 @@ server <- function(input, output, session) {
     fileTypeFile2 <- tools::file_ext(file$datapath)
     req(file)
     
-    df2 <- fread(file$datapath, header = input$header, sep = input$sepMeta)
+    df2 <- fread(file$datapath, header = input$header, sep = input$sepMeta) %>% 
+      as.data.frame()
+    
+    if (!has_rownames(df2)) {
+      rownames(df2) <- df2[, 1]
+      df2[, 1] <- NULL
+    }
 #     if (fileTypeFile2 == "csv") {
 #       df2 <- read.csv(file$datapath,
 #         header = input$header,
