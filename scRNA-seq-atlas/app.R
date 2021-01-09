@@ -55,6 +55,37 @@ list_geo <- function(id) {
   out
 }
 
+prep_email <- function(id) {
+  out <- tryCatch(
+    suppressMessages(GEOquery::getGEO(
+      GEO = id,
+      filename = NULL,
+      GSElimits = NULL, GSEMatrix = FALSE,
+      AnnotGPL = FALSE, getGPL = FALSE,
+      parseCharacteristics = FALSE
+      )),
+                  error = function(e) {
+                    "error_get"
+                  })
+  if (class(out) != "GSE") {
+    return(out)
+  } else {
+    name <- paste0("Dr ", out@header$contact_name %>% str_remove(".+,"))
+    email <- out@header$contact_email
+    link <- paste0("mailto:",
+                 email,
+                 "?subject=additional info request for ",
+                 id,
+                 "&body=Dear ",
+                 name,
+                 ",%0D%0A%0D%0ACan you please provide additional metadata information for the single cell dataset deposited on GEO, ",
+                 id,
+                 ".",
+                 "%0D%0A%0D%0AThank you so much")
+    return(link)
+  }
+}
+  
 preview_link <- function(link, n_row = 5, n_col = 50, verbose = T) {
   # make sure link works
   message(link)
@@ -252,7 +283,7 @@ server <- function(input, output, session) {
           print(file)
         }
         
-        df1 <- fread(file$datapath) %>% as.data.frame()
+        df1 <- data.table::fread(file$datapath) %>% as.data.frame()
         rownames(df1) <- df1[, 1]
         df1[, 1] <- NULL
         w1$hide()
@@ -532,16 +563,22 @@ server <- function(input, output, session) {
       {
         rv$links <- list_geo("GSE113049")
         links2 <- cbind(rv$links %>% mutate(size = map(link, get_file_size)) %>% select(-link),
-                        button = sapply(1:nrow(links), make_button("tbl1")), 
+                        button = sapply(1:nrow(rv$links), make_button("tbl1")), 
                         stringsAsFactors = FALSE)
         showModal(modalDialog(
           DT::renderDataTable(
-            data.table(links2),
+            data.table::data.table(links2),
                       escape = ncol(links2)-1, fillContainer = TRUE
               ),
           tags$caption("try to make reference from GEO id"),
           #DT::renderDataTable(preview_link(links$link[1])[, 1:5]),
           #DT::renderDataTable(preview_link(links$link[2])[, 1:5]),
+          actionButton("email", label = "email author for missing data", 
+                       #onclick = "location.href='mailto:kent.riemondy@cuanschutz.edu';"),
+                       #onclick = paste0('location.href="', "mailto:kent.riemondy@cuanschutz.edu?subject=additional info request for GSE113049&body=Dear Dr Dr Riemondy,%0D%0ACan you please provide additional metadata information for the single cell dataset deposited on GEO, GSE113049Thank you", '"')),
+                       onclick = paste0('location.href="',
+                                        prep_email("GSE113049"),
+                                        '"')),
           easyClose = TRUE
         ))
         #rv$matrixloc <- list(datapath = url(links$link[1]))
@@ -561,7 +598,8 @@ server <- function(input, output, session) {
         easyClose = TRUE,
         footer = NULL,
         DT::renderDataTable(preview_link(rv$links$link[as.numeric(row)])[, 1:5]),
-        actionButton("full", "Start full loading")
+        actionButton("full", "Start full loading"),
+        actionButton("back", "Back to file list")
       ))
     })
     
@@ -570,6 +608,31 @@ server <- function(input, output, session) {
       rv$matrixloc <- list(datapath = rv$loadinglink)
       print(rv$matrixloc)
       removeModal()})
+    
+    observeEvent(input$back, {
+      rv$links <- list_geo("GSE113049")
+      links2 <- cbind(rv$links %>% mutate(size = map(link, get_file_size)) %>% select(-link),
+                      button = sapply(1:nrow(rv$links), make_button("tbl1")), 
+                      stringsAsFactors = FALSE)
+      showModal(modalDialog(
+        DT::renderDataTable(
+          data.table::data.table(links2),
+          escape = ncol(links2)-1, fillContainer = TRUE
+        ),
+        tags$caption("try to make reference from GEO id"),
+        #DT::renderDataTable(preview_link(links$link[1])[, 1:5]),
+        #DT::renderDataTable(preview_link(links$link[2])[, 1:5]),
+        actionButton("email", label = "email author for missing data", 
+                     #onclick = "location.href='mailto:kent.riemondy@cuanschutz.edu';"),
+                     #onclick = paste0('location.href="', "mailto:kent.riemondy@cuanschutz.edu?subject=additional info request for GSE113049&body=Dear Dr Dr Riemondy,%0D%0ACan you please provide additional metadata information for the single cell dataset deposited on GEO, GSE113049Thank you", '"')),
+                     onclick = paste0('location.href="',
+                                      prep_email("GSE113049"),
+                                      '"')),
+        easyClose = TRUE
+      ))
+      #rv$matrixloc <- list(datapath = url(links$link[1]))
+      #rv$metaloc <- list(datapath = url(links$link[2]))
+    })
 }
 
 # Create Shiny app ----
