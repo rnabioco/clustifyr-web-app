@@ -10,6 +10,7 @@ library(Seurat)
 library(shinydashboard)
 library(tidyverse)
 library(ComplexHeatmap)
+library(GEOquery)
 
 options(shiny.maxRequestSize = 1500*1024^2)
 options(repos = BiocManager::repositories())
@@ -35,6 +36,7 @@ get_file_size <- function(url) {
 }
 
 list_geo <- function(id) {
+  message("fetching info for all files available...")
   # look for files
   out <- tryCatch(suppressMessages(GEOquery::getGEOSuppFiles(id,
                                                       makeDirectory = F,
@@ -113,7 +115,6 @@ preview_link <- function(link, n_row = 5, n_col = 50, verbose = T) {
 
 # Define UI for data upload app ----
 ui <- fluidPage(
-
     # waiter stuff ----
     use_waiter(),
     
@@ -229,6 +230,7 @@ server <- function(input, output, session) {
     rv$metaloc <- NULL
     rv$links <- list()
     rv$loadinglink <- ""
+    rv$lastgeo <- ""
     
     # waiter checkpoints
     w1 <- Waiter$new(id = "contents1",
@@ -263,6 +265,20 @@ server <- function(input, output, session) {
                      html = tagList(
                        spin_flower(),
                        h4("Heatmap drawing..."),
+                       h4("")
+                     ))
+    
+    w6 <- Waiter$new(id = "modalgeo",
+                     html = tagList(
+                       spin_flower(),
+                       h4("Info fetching..."),
+                       h4("")
+                     ))
+    
+    w7 <- Waiter$new(id = "modalfiles",
+                     html = tagList(
+                       spin_flower(),
+                       h4("File previewing..."),
                        h4("")
                      ))
     
@@ -560,14 +576,28 @@ server <- function(input, output, session) {
     # modal for GEO id
     observeEvent(
       input$geo,
+      showModal(modalDialog(
+        div(id = "modalgeo",
+        textInput("geoid", "query GEO id", value = "GSE113049"),
+        actionButton("geogo", "fetch file info")
+      )
+      ))
+    )
+    
+    observeEvent(
+      input$geogo,
       {
-        rv$links <- list_geo("GSE113049")
+        w6$show()
+        rv$lastgeo <- input$geoid
+        rv$links <- list_geo(rv$lastgeo)
         links2 <- cbind(rv$links %>% mutate(size = map(link, get_file_size)) %>% select(-link),
                         button = sapply(1:nrow(rv$links), make_button("tbl1")), 
-                        stringsAsFactors = FALSE)
+                        stringsAsFactors = FALSE) %>% data.table::data.table()
+        w6$hide()
         showModal(modalDialog(
+          div(id = "modalfiles",
           DT::renderDataTable(
-            data.table::data.table(links2),
+            links2,
                       escape = ncol(links2)-1, fillContainer = TRUE
               ),
           tags$caption("try to make reference from GEO id"),
@@ -577,9 +607,10 @@ server <- function(input, output, session) {
                        #onclick = "location.href='mailto:kent.riemondy@cuanschutz.edu';"),
                        #onclick = paste0('location.href="', "mailto:kent.riemondy@cuanschutz.edu?subject=additional info request for GSE113049&body=Dear Dr Dr Riemondy,%0D%0ACan you please provide additional metadata information for the single cell dataset deposited on GEO, GSE113049Thank you", '"')),
                        onclick = paste0('location.href="',
-                                        prep_email("GSE113049"),
+                                        prep_email(rv$lastgeo),
                                         '"')),
           easyClose = TRUE
+          )
         ))
         #rv$matrixloc <- list(datapath = url(links$link[1]))
         #rv$metaloc <- list(datapath = url(links$link[2]))
@@ -587,19 +618,24 @@ server <- function(input, output, session) {
     )
   
     observeEvent(input[["button"]], {
+      w7$show()
       splitID <- strsplit(input[["button"]], "_")[[1]]
       tbl <- splitID[2]
       row <- splitID[3]
       rv$loadinglink <<- rv$links$link[as.numeric(row)]
       print(rv$links)
+      previewdata <- preview_link(rv$links$link[as.numeric(row)])[, 1:5]
+      w7$hide()
       showModal(modalDialog(
+        div(id = "modalback",
         title = "preview",
         size = "s",
         easyClose = TRUE,
         footer = NULL,
-        DT::renderDataTable(preview_link(rv$links$link[as.numeric(row)])[, 1:5]),
+        DT::renderDataTable(previewdata),
         actionButton("full", "Start full loading"),
         actionButton("back", "Back to file list")
+        )
       ))
     })
     
@@ -610,25 +646,25 @@ server <- function(input, output, session) {
       removeModal()})
     
     observeEvent(input$back, {
-      rv$links <- list_geo("GSE113049")
+      # rv$links <- list_geo(rv$lastgeo)
       links2 <- cbind(rv$links %>% mutate(size = map(link, get_file_size)) %>% select(-link),
                       button = sapply(1:nrow(rv$links), make_button("tbl1")), 
                       stringsAsFactors = FALSE)
       showModal(modalDialog(
-        DT::renderDataTable(
-          data.table::data.table(links2),
-          escape = ncol(links2)-1, fillContainer = TRUE
-        ),
-        tags$caption("try to make reference from GEO id"),
-        #DT::renderDataTable(preview_link(links$link[1])[, 1:5]),
-        #DT::renderDataTable(preview_link(links$link[2])[, 1:5]),
-        actionButton("email", label = "email author for missing data", 
-                     #onclick = "location.href='mailto:kent.riemondy@cuanschutz.edu';"),
-                     #onclick = paste0('location.href="', "mailto:kent.riemondy@cuanschutz.edu?subject=additional info request for GSE113049&body=Dear Dr Dr Riemondy,%0D%0ACan you please provide additional metadata information for the single cell dataset deposited on GEO, GSE113049Thank you", '"')),
-                     onclick = paste0('location.href="',
-                                      prep_email("GSE113049"),
-                                      '"')),
-        easyClose = TRUE
+          DT::renderDataTable(
+            data.table::data.table(links2),
+            escape = ncol(links2)-1, fillContainer = TRUE
+          ),
+          tags$caption("try to make reference from GEO id"),
+          #DT::renderDataTable(preview_link(links$link[1])[, 1:5]),
+          #DT::renderDataTable(preview_link(links$link[2])[, 1:5]),
+          actionButton("email", label = "email author for missing data", 
+                       #onclick = "location.href='mailto:kent.riemondy@cuanschutz.edu';"),
+                       #onclick = paste0('location.href="', "mailto:kent.riemondy@cuanschutz.edu?subject=additional info request for GSE113049&body=Dear Dr Dr Riemondy,%0D%0ACan you please provide additional metadata information for the single cell dataset deposited on GEO, GSE113049Thank you", '"')),
+                       onclick = paste0('location.href="',
+                                        prep_email(rv$lastgeo),
+                                        '"')),
+          easyClose = TRUE
       ))
       #rv$matrixloc <- list(datapath = url(links$link[1]))
       #rv$metaloc <- list(datapath = url(links$link[2]))
