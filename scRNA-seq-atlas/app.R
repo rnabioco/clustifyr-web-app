@@ -516,7 +516,7 @@ server <- function(input, output, session) {
       
         # could expose as an option
         cutoff_to_display <- 0.5
-        tmp_mat <<- dataClustify()
+        tmp_mat <- dataClustify()
         
         if (!is.null(tmp_mat)) {
           w5$show()
@@ -592,14 +592,20 @@ server <- function(input, output, session) {
         rv$links <- list_geo(rv$lastgeo)
         links2 <- cbind(rv$links %>% mutate(size = map(link, get_file_size)) %>% select(-link),
                         button = sapply(1:nrow(rv$links), make_button("tbl1")), 
-                        stringsAsFactors = FALSE) %>% data.table::data.table()
+                        stringsAsFactors = FALSE) %>% 
+          data.table::data.table() %>% 
+          DT::datatable(options = list(
+            dom = "ftp", 
+            searchHighlight = TRUE,
+            paging = TRUE,
+            pageLength = 5,
+            scrollY = FALSE),
+            escape = ncol(links2)-1, fillContainer = TRUE)
         w6$hide()
         showModal(modalDialog(
+          size = "l",
           div(id = "modalfiles",
-          DT::renderDataTable(
-            links2,
-                      escape = ncol(links2)-1, fillContainer = TRUE
-              ),
+          DT::renderDataTable(links2),
           tags$caption("try to make reference from GEO id"),
           #DT::renderDataTable(preview_link(links$link[1])[, 1:5]),
           #DT::renderDataTable(preview_link(links$link[2])[, 1:5]),
@@ -648,12 +654,20 @@ server <- function(input, output, session) {
     observeEvent(input$back, {
       # rv$links <- list_geo(rv$lastgeo)
       links2 <- cbind(rv$links %>% mutate(size = map(link, get_file_size)) %>% select(-link),
-                      button = sapply(1:nrow(rv$links), make_button("tbl1")), 
-                      stringsAsFactors = FALSE)
+                       button = sapply(1:nrow(rv$links), make_button("tbl1")), 
+                       stringsAsFactors = FALSE) %>% 
+        data.table::data.table() %>% 
+        DT::datatable(options = list(
+          dom = "ftp", 
+          searchHighlight = TRUE,
+          paging = TRUE,
+          pageLength = 5,
+          scrollY = FALSE),
+          escape = ncol(links2)-1, fillContainer = TRUE)
       showModal(modalDialog(
-          DT::renderDataTable(
-            data.table::data.table(links2),
-            escape = ncol(links2)-1, fillContainer = TRUE
+          DT::renderDataTable(links2,
+            escape = ncol(links2)-1, 
+            fillContainer = TRUE
           ),
           tags$caption("try to make reference from GEO id"),
           #DT::renderDataTable(preview_link(links$link[1])[, 1:5]),
