@@ -73,7 +73,12 @@ prep_email <- function(id) {
     return(out)
   } else {
     name <- paste0("Dr ", out@header$contact_name %>% str_remove(".+,"))
-    email <- out@header$contact_email
+    if (id == "GSE113049") {
+      email <- "placeholder@forexample.com"
+    } else {
+      email <- out@header$contact_email
+    }
+    
     link <- paste0("mailto:",
                  email,
                  "?subject=additional info request for ",
@@ -110,8 +115,6 @@ preview_link <- function(link, n_row = 5, n_col = 50, verbose = T) {
     
   return(temp_df)
 }
-# preview_link(list_geo("GSE113049")$link[1])
-# preview_link(list_geo("GSE113049")$link[2])[, 1:5]
 
 # Define UI for data upload app ----
 ui <- fluidPage(
@@ -590,10 +593,12 @@ server <- function(input, output, session) {
         w6$show()
         rv$lastgeo <- input$geoid
         rv$links <- list_geo(rv$lastgeo)
+        print(rv$links)
         links2 <- cbind(rv$links %>% mutate(size = map(link, get_file_size)) %>% select(-link),
                         button = sapply(1:nrow(rv$links), make_button("tbl1")), 
                         stringsAsFactors = FALSE) %>% 
-          data.table::data.table() %>% 
+          data.table::data.table()
+        links2 <- links2 %>% 
           DT::datatable(options = list(
             dom = "ftp", 
             searchHighlight = TRUE,
@@ -607,19 +612,13 @@ server <- function(input, output, session) {
           div(id = "modalfiles",
           DT::renderDataTable(links2),
           tags$caption("try to make reference from GEO id"),
-          #DT::renderDataTable(preview_link(links$link[1])[, 1:5]),
-          #DT::renderDataTable(preview_link(links$link[2])[, 1:5]),
           actionButton("email", label = "email author for missing data", 
-                       #onclick = "location.href='mailto:kent.riemondy@cuanschutz.edu';"),
-                       #onclick = paste0('location.href="', "mailto:kent.riemondy@cuanschutz.edu?subject=additional info request for GSE113049&body=Dear Dr Dr Riemondy,%0D%0ACan you please provide additional metadata information for the single cell dataset deposited on GEO, GSE113049Thank you", '"')),
                        onclick = paste0('location.href="',
                                         prep_email(rv$lastgeo),
                                         '"')),
           easyClose = TRUE
           )
         ))
-        #rv$matrixloc <- list(datapath = url(links$link[1]))
-        #rv$metaloc <- list(datapath = url(links$link[2]))
       }
     )
   
@@ -652,11 +651,11 @@ server <- function(input, output, session) {
       removeModal()})
     
     observeEvent(input$back, {
-      # rv$links <- list_geo(rv$lastgeo)
       links2 <- cbind(rv$links %>% mutate(size = map(link, get_file_size)) %>% select(-link),
                        button = sapply(1:nrow(rv$links), make_button("tbl1")), 
                        stringsAsFactors = FALSE) %>% 
-        data.table::data.table() %>% 
+        data.table::data.table() 
+      links2 <- links2 %>% 
         DT::datatable(options = list(
           dom = "ftp", 
           searchHighlight = TRUE,
@@ -670,18 +669,12 @@ server <- function(input, output, session) {
             fillContainer = TRUE
           ),
           tags$caption("try to make reference from GEO id"),
-          #DT::renderDataTable(preview_link(links$link[1])[, 1:5]),
-          #DT::renderDataTable(preview_link(links$link[2])[, 1:5]),
           actionButton("email", label = "email author for missing data", 
-                       #onclick = "location.href='mailto:kent.riemondy@cuanschutz.edu';"),
-                       #onclick = paste0('location.href="', "mailto:kent.riemondy@cuanschutz.edu?subject=additional info request for GSE113049&body=Dear Dr Dr Riemondy,%0D%0ACan you please provide additional metadata information for the single cell dataset deposited on GEO, GSE113049Thank you", '"')),
                        onclick = paste0('location.href="',
                                         prep_email(rv$lastgeo),
                                         '"')),
           easyClose = TRUE
       ))
-      #rv$matrixloc <- list(datapath = url(links$link[1]))
-      #rv$metaloc <- list(datapath = url(links$link[2]))
     })
 }
 
