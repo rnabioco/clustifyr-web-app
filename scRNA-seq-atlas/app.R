@@ -351,6 +351,11 @@ server <- function(input, output, session) {
     else {
       return(df2)
     }
+    callback = JS(js)
+  })
+  
+  output$colclicked <- renderPrint({
+    input[["column_clicked"]]
   })
 
   observeEvent(input$matrixPopup, {
