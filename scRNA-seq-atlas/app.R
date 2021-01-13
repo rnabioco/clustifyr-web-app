@@ -22,6 +22,15 @@ eh <- ExperimentHub()
 refs <- query(eh, "clustifyrdatahub")
 ref_dict <- refs$ah_id %>% setNames(refs$title)
 
+js <- c(
+  "table.on('click', 'td', function(){",
+  "  var cell = table.cell(this);",
+  "  var colindex = cell.index().column;",
+  "  var colname = table.column(colindex).header().innerText;",
+  "  Shiny.setInputValue('column_clicked', colname);",
+  "});"
+)
+
 # Define UI for data upload app ----
 ui <- dashboardPage(
   dashboardHeader(title = "Clustifyr RShiny App"),
@@ -157,7 +166,7 @@ ui <- dashboardPage(
         ),
 
         actionButton("metadataPopup", "Display Metadata table in popup"),
-        tableOutput("contents2"), # Metadata table
+        DT::dataTableOutput("contents2"), # Metadata table
         tags$hr(),
         h2("Choose cluster and reference column (cell types)"),
         
@@ -322,7 +331,7 @@ server <- function(input, output, session) {
     df2
   })
 
-  output$contents1 <- renderTable({
+  output$contents1 <- DT::renderDataTable({
     df1 <- data1()
     # file 1
     if (input$dispMat == "head") {
@@ -333,7 +342,7 @@ server <- function(input, output, session) {
     }
   })
 
-  output$contents2 <- renderTable({
+  output$contents2 <- DT::renderDataTable({
     df2 <- data2()
     # file 2
     if (input$dispMeta == "head") {
