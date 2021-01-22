@@ -326,6 +326,10 @@ server <- function(input, output, session) {
       choices = c("", colnames(df2)),
       selected = ""
     )
+    
+    updateSelectInput(session, "metadataCellType",
+      selected = output$colclickedReactive()
+    )
 
     w2$hide()
     df2
@@ -352,6 +356,11 @@ server <- function(input, output, session) {
       return(df2)
     }
     callback = JS(js)
+  })
+  
+  
+  output$colclickedReactive <- reactive({
+    input[["column_clicked"]]
   })
   
   output$colclicked <- renderPrint({
