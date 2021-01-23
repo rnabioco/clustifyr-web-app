@@ -12,6 +12,7 @@ library(shinydashboard)
 library(tidyverse)
 library(data.table)
 library(R.utils)
+library(DT)
 # library(ComplexHeatmap)
 
 options(shiny.maxRequestSize = 1500 * 1024^2)
@@ -166,12 +167,14 @@ ui <- dashboardPage(
         ),
 
         actionButton("metadataPopup", "Display Metadata table in popup"),
-        DT::dataTableOutput("contents2"), # Metadata table
+        fluidRow(column(12, DTOutput('contents2Test'))),
+        #DT::dataTableOutput("contents2"), # Metadata table
         tags$hr(),
         h2("Choose cluster and reference column (cell types)"),
-        
+        fluidRow(column(12), verbatimTextOutput("colclicked")),
         selectInput("metadataCellType", "Cell Type Metadata Column:",
-                    choice = list("")
+                    choice = list(""),
+                    selected = "colclicked"
         ),
         
         helpText("Choose cell type metadata column for average_clusters function"),
@@ -326,10 +329,6 @@ server <- function(input, output, session) {
       choices = c("", colnames(df2)),
       selected = ""
     )
-    
-    updateSelectInput(session, "metadataCellType",
-      selected = output$colclickedReactive()
-    )
 
     w2$hide()
     df2
@@ -346,22 +345,23 @@ server <- function(input, output, session) {
     }
   })
 
-  output$contents2 <- DT::renderDataTable({
-    df2 <- data2()
-    # file 2
-    if (input$dispMeta == "head") {
-      return(head(df2))
-    }
-    else {
-      return(df2)
-    }
+  # output$contents2 <- DT::renderDT({
+  #   df2 <- data2()
+  #   # file 2
+  #   if (input$dispMeta == "head") {
+  #     return(head(df2))
+  #   }
+  #   else {
+  #     return(df2)
+  #   }
+  #   callback = JS(js)
+  # })
+  
+  output$contents2Test = renderDT(
+    head(data2()),
+    options = list(lengthChange = FALSE),
     callback = JS(js)
-  })
-  
-  
-  output$colclickedReactive <- reactive({
-    input[["column_clicked"]]
-  })
+  )
   
   output$colclicked <- renderPrint({
     input[["column_clicked"]]
