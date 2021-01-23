@@ -360,7 +360,8 @@ server <- function(input, output, session) {
   output$contents2Test = renderDT(
     head(data2()),
     options = list(lengthChange = FALSE),
-    callback = JS(js)
+    selection = list(target = 'column'),
+    callback = DT::JS(js)
   )
   
   output$colclicked <- renderPrint({
