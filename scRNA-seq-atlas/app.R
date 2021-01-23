@@ -12,6 +12,7 @@ library(shinydashboard)
 library(tidyverse)
 library(data.table)
 library(R.utils)
+library(DT)
 # library(ComplexHeatmap)
 
 options(shiny.maxRequestSize = 1500 * 1024^2)
@@ -21,6 +22,15 @@ options(shiny.reactlog = TRUE)
 eh <- ExperimentHub()
 refs <- query(eh, "clustifyrdatahub")
 ref_dict <- refs$ah_id %>% setNames(refs$title)
+
+js <- c(
+  "table.on('click', 'td', function(){",
+  "  var cell = table.cell(this);",
+  "  var colindex = cell.index().column;",
+  "  var colname = table.column(colindex).header().innerText;",
+  "  Shiny.setInputValue('column_clicked', colname);",
+  "});"
+)
 
 # Define UI for data upload app ----
 ui <- dashboardPage(
@@ -137,7 +147,7 @@ ui <- dashboardPage(
           )
         ),
         actionButton("matrixPopup", "Display UMI Matrix in popup"),
-        tableOutput("contents1"), # UMI Count Matrix
+        DTOutput("contents1"), # UMI Count Matrix
         tags$hr()
       ),
       tabItem(
@@ -157,30 +167,32 @@ ui <- dashboardPage(
         ),
 
         actionButton("metadataPopup", "Display Metadata table in popup"),
-        tableOutput("contents2"), # Metadata table
-        tags$hr()
-      ),
-      tabItem(
-        tabName = "clusterRefCol",
+        fluidRow(column(12, DTOutput('contents2'))),
+        #DT::dataTableOutput("contents2"), # Metadata table
+        tags$hr(),
+        textOutput("colclicked"),
+        
         h2("Choose cluster and reference column (cell types)"),
-
         selectInput("metadataCellType", "Cell Type Metadata Column:",
-          choice = list("")
+                    choice = list("")
         ),
-
+        
         helpText("Choose cell type metadata column for average_clusters function"),
         hr(),
         selectInput("dataHubReference", "ClustifyrDataHub Reference:",
-          choices = list(
-            "ref_MCA", "ref_tabula_muris_drop", "ref_tabula_muris_facs",
-            "ref_mouse.rnaseq", "ref_moca_main", "ref_immgen", "ref_hema_microarray",
-            "ref_cortex_dev", "ref_pan_indrop", "ref_pan_smartseq2",
-            "ref_mouse_atlas"
-          )
+                    choices = list(
+                      "ref_MCA", "ref_tabula_muris_drop", "ref_tabula_muris_facs",
+                      "ref_mouse.rnaseq", "ref_moca_main", "ref_immgen", "ref_hema_microarray",
+                      "ref_cortex_dev", "ref_pan_indrop", "ref_pan_smartseq2",
+                      "ref_mouse_atlas"
+                    )
         ),
         helpText("Choose reference cell atlas for clustify function"),
         hr(),
         helpText("Choose cell reference for clustify function"),
+      ),
+      tabItem(
+        tabName = "clusterRefCol",
         box(id = "box_clustifym",
             collapsible = TRUE,
             collapsed = TRUE,
@@ -317,12 +329,12 @@ server <- function(input, output, session) {
       choices = c("", colnames(df2)),
       selected = ""
     )
-
+    
     w2$hide()
     df2
   })
 
-  output$contents1 <- renderTable({
+  output$contents1 <- DT::renderDataTable({
     df1 <- data1()
     # file 1
     if (input$dispMat == "head") {
@@ -333,7 +345,7 @@ server <- function(input, output, session) {
     }
   })
 
-  output$contents2 <- renderTable({
+  output$contents2 <- DT::renderDataTable({
     df2 <- data2()
     # file 2
     if (input$dispMeta == "head") {
@@ -342,7 +354,20 @@ server <- function(input, output, session) {
     else {
       return(df2)
     }
+    
+  }, callback = DT::JS(js), selection = list(target = 'column'))
+  
+  output$colclicked <- renderPrint({
+    input[["column_clicked"]]
   })
+  
+  observeEvent(input[["column_clicked"]], {
+    updateSelectInput(session, "metadataCellType", 
+      selected = input[["column_clicked"]]                   
+    )
+  })
+  
+  
 
   observeEvent(input$matrixPopup, {
     showModal(modalDialog(
@@ -511,6 +536,7 @@ server <- function(input, output, session) {
     addCssClass(selector = "a[data-value='metadataLoad']", class = "doneLink")
     addClass(selector = "ul li:eq(2)", class = "doneLink")
   })
+
 }
 
 # Create Shiny app ----
