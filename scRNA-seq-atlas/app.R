@@ -329,7 +329,7 @@ server <- function(input, output, session) {
       choices = c("", colnames(df2)),
       selected = ""
     )
-
+    
     w2$hide()
     df2
   })
@@ -360,6 +360,14 @@ server <- function(input, output, session) {
   output$colclicked <- renderPrint({
     input[["column_clicked"]]
   })
+  
+  observeEvent(input[["column_clicked"]], {
+    updateSelectInput(session, "metadataCellType", 
+      selected = input[["column_clicked"]]                   
+    )
+  })
+  
+  
 
   observeEvent(input$matrixPopup, {
     showModal(modalDialog(
