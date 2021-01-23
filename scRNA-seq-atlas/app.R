@@ -12,6 +12,7 @@ library(shinydashboard)
 library(tidyverse)
 library(data.table)
 library(R.utils)
+library(DT)
 # library(ComplexHeatmap)
 
 options(shiny.maxRequestSize = 1500 * 1024^2)
@@ -146,7 +147,7 @@ ui <- dashboardPage(
           )
         ),
         actionButton("matrixPopup", "Display UMI Matrix in popup"),
-        tableOutput("contents1"), # UMI Count Matrix
+        DTOutput("contents1"), # UMI Count Matrix
         tags$hr()
       ),
       tabItem(
@@ -166,12 +167,12 @@ ui <- dashboardPage(
         ),
 
         actionButton("metadataPopup", "Display Metadata table in popup"),
-        DT::dataTableOutput("contents2"), # Metadata table
+        fluidRow(column(12, DTOutput('contents2'))),
+        #DT::dataTableOutput("contents2"), # Metadata table
         tags$hr(),
         textOutput("colclicked"),
         
         h2("Choose cluster and reference column (cell types)"),
-        
         selectInput("metadataCellType", "Cell Type Metadata Column:",
                     choice = list("")
         ),
@@ -351,10 +352,10 @@ server <- function(input, output, session) {
       return(head(df2))
     }
     else {
-      return(data.table(df2, selection = list(target = 'column')))
+      return(df2)
     }
     
-  }, callback = DT::JS(js), selection = ...)
+  }, callback = DT::JS(js))
   
   output$colclicked <- renderPrint({
     input[["column_clicked"]]
