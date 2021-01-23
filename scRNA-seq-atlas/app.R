@@ -168,6 +168,8 @@ ui <- dashboardPage(
         actionButton("metadataPopup", "Display Metadata table in popup"),
         DT::dataTableOutput("contents2"), # Metadata table
         tags$hr(),
+        textOutput("colclicked"),
+        
         h2("Choose cluster and reference column (cell types)"),
         
         selectInput("metadataCellType", "Cell Type Metadata Column:",
@@ -326,10 +328,6 @@ server <- function(input, output, session) {
       choices = c("", colnames(df2)),
       selected = ""
     )
-    
-    updateSelectInput(session, "metadataCellType",
-      selected = output$colclickedReactive()
-    )
 
     w2$hide()
     df2
@@ -353,15 +351,10 @@ server <- function(input, output, session) {
       return(head(df2))
     }
     else {
-      return(df2)
+      return(data.table(df2, selection = list(target = 'column')))
     }
-    callback = JS(js)
-  })
-  
-  
-  output$colclickedReactive <- reactive({
-    input[["column_clicked"]]
-  })
+    
+  }, callback = DT::JS(js), selection = ...)
   
   output$colclicked <- renderPrint({
     input[["column_clicked"]]
@@ -534,6 +527,7 @@ server <- function(input, output, session) {
     addCssClass(selector = "a[data-value='metadataLoad']", class = "doneLink")
     addClass(selector = "ul li:eq(2)", class = "doneLink")
   })
+
 }
 
 # Create Shiny app ----
