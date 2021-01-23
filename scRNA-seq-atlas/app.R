@@ -355,7 +355,7 @@ server <- function(input, output, session) {
       return(df2)
     }
     
-  }, callback = DT::JS(js))
+  }, callback = DT::JS(js), selection = list(target = 'column'))
   
   output$colclicked <- renderPrint({
     input[["column_clicked"]]
