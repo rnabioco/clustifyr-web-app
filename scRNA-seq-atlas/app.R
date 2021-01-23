@@ -18,6 +18,13 @@ library(DT)
 options(shiny.maxRequestSize = 1500 * 1024^2)
 options(repos = BiocManager::repositories())
 options(shiny.reactlog = TRUE)
+options(DT.options = list(
+  dom = "tp", 
+  paging = TRUE,
+  pageLength = 6,
+  scrollX = TRUE
+  )
+)
 
 eh <- ExperimentHub()
 refs <- query(eh, "clustifyrdatahub")
@@ -204,9 +211,9 @@ ui <- dashboardPage(
         downloadButton("downloadClustify", "Download clustify matrix"),
         actionButton("uploadClustify", "Upload reference matrix"),
 
-        tableOutput("reference"), # Reference Matrix
+        DT::dataTableOutput("reference"), # Reference Matrix
         tags$hr(),
-        tableOutput("clustify"), # Clustify Matrix
+        DT::dataTableOutput("clustify"), # Clustify Matrix
         tags$hr(),
         plotOutput("hmap", height = "600px")
       )
@@ -355,7 +362,9 @@ server <- function(input, output, session) {
       return(df2)
     }
     
-  }, callback = DT::JS(js), selection = list(target = 'column'))
+  }, 
+  callback = DT::JS(js), 
+  selection = list(target = 'column', mode = "single"))
   
   output$colclicked <- renderPrint({
     input[["column_clicked"]]
@@ -374,7 +383,7 @@ server <- function(input, output, session) {
       tags$caption("Matrix table"),
       DT::renderDataTable({
         matrixRender <- head(data1())
-        DT::datatable(matrixRender, escape = FALSE)
+        DT::datatable(matrixRender)
       }),
       easyClose = TRUE
     ))
@@ -385,7 +394,7 @@ server <- function(input, output, session) {
       tags$caption("Metadata table"),
       DT::renderDataTable({
         matrixRender <- head(data2())
-        DT::datatable(matrixRender, escape = FALSE)
+        DT::datatable(matrixRender)
       }),
       easyClose = TRUE
     ))
@@ -429,20 +438,20 @@ server <- function(input, output, session) {
     res
   })
 
-  output$reference <- renderTable({
+  output$reference <- DT::renderDataTable({
     reference_matrix <- dataRef()
     if (is.null(reference_matrix)) {
       return(NULL)
     }
-    head(rownames_to_column(as.data.frame(reference_matrix), input$metadataCellType))
+    rownames_to_column(as.data.frame(reference_matrix), input$metadataCellType)
   })
 
-  output$clustify <- renderTable({
+  output$clustify <- DT::renderDataTable({
     res <- dataClustify()
     if (is.null(res)) {
       return(NULL)
     }
-    head(rownames_to_column(as.data.frame(res), input$metadataCellType))
+    rownames_to_column(as.data.frame(res), input$metadataCellType)
   })
 
   # Make plots such as heat maps to compare benchmarking with clustify with actual cell types
