@@ -13,6 +13,7 @@ library(tidyverse)
 library(data.table)
 library(R.utils)
 library(DT)
+library(GEOquery)
 # library(ComplexHeatmap)
 
 options(shiny.maxRequestSize = 1500 * 1024^2)
@@ -38,3 +39,115 @@ js <- c(
   "  Shiny.setInputValue('column_clicked', colname);",
   "});"
 )
+
+# get active tab
+js2 <- '
+$(document).ready(function(){
+  $("a[data-toggle=tab]").on("show.bs.tab", function(e){
+    Shiny.setInputValue("activeTab", $(this).attr("data-value"));
+  });
+});
+'
+
+# GEO functions
+make_button <- function(tbl){
+  function(i){
+    sprintf(
+      paste0('<button id="button_%s_%d', '_', Sys.time(), '" type="button" onclick="%s">Load</button>'), 
+      tbl, i, "Shiny.setInputValue('button', this.id);")
+  }
+}
+
+get_file_size <- function(url) {
+  response <- httr::HEAD(url)
+  size <- httr::headers(response)[["Content-Length"]] %>% as.numeric()
+  utils:::format.object_size(size, "auto")
+}
+
+list_geo <- function(id) {
+  message("fetching info for all files available...")
+  # look for files
+  out <- tryCatch(suppressMessages(GEOquery::getGEOSuppFiles(id,
+                                                             makeDirectory = F,
+                                                             fetch_files = F))$fname,
+                  error = function(e) {
+                    "error_get"
+                  })
+  
+  # make links
+  out <- data.frame(file = out) %>% 
+    mutate(link = str_c("https://ftp.ncbi.nlm.nih.gov/geo/series/GSE",
+                        str_extract(file, "[0-9]{3}"),
+                        "nnn/",
+                        id,
+                        "/suppl/",
+                        file))
+  
+  out
+}
+
+prep_email <- function(id) {
+  out <- tryCatch(
+    suppressMessages(GEOquery::getGEO(
+      GEO = id,
+      filename = NULL,
+      GSElimits = NULL, GSEMatrix = FALSE,
+      AnnotGPL = FALSE, getGPL = FALSE,
+      parseCharacteristics = FALSE
+    )),
+    error = function(e) {
+      "error_get"
+    })
+  if (class(out) != "GSE") {
+    return(out)
+  } else {
+    name <- paste0("Dr ", out@header$contact_name %>% str_remove(".+,"))
+    if (id == "GSE113049") {
+      email <- "placeholder@forexample.com"
+    } else {
+      email <- out@header$contact_email
+    }
+    
+    link <- paste0("mailto:",
+                   email,
+                   "?subject=additional info request for ",
+                   id,
+                   "&body=Dear ",
+                   name,
+                   ",%0D%0A%0D%0ACan you please provide additional metadata information for the single cell dataset deposited on GEO, ",
+                   id,
+                   ".",
+                   "%0D%0A%0D%0AThank you so much")
+    return(link)
+  }
+}
+
+preview_link <- function(link, n_row = 5, n_col = 50, verbose = T) {
+  # make sure link works
+  message(link)
+  if (!str_starts(str_to_lower(link), "http")) {
+    return(NA)
+  }
+  
+  # stream in a few lines only
+  message("read")
+  url1 <- url(link)
+  if (str_ends(link, "\\.gz")) {
+    temp <- readLines(gzcon(url1), n = n_row)
+  } else {
+    temp <- readLines(url1, n = n_row)
+  }
+  close(url1)
+  readable <- map(temp, function(x) {all(charToRaw(x[1]) <= as.raw(127))}) %>%
+    unlist() %>% 
+    all()
+  if (!readable) {
+    return(NULL)
+  }
+  
+  # parsing, using fread auto
+  temp_df <- tryCatch(data.table::fread(text = temp),#, header = TRUE, fill = TRUE),
+                      error = function() {"paring failed"})
+  
+  return(temp_df)
+}
