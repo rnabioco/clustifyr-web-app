@@ -8,7 +8,8 @@ server <- function(input, output, session) {
   rv$clustifym <- "clustifyr not yet run"
   rv$lastgeo <- "GSE113049"
   rv$ref <- NULL
-
+  rv$ref_visited <- 0
+  
   # waiter checkpoints
   w1 <- Waiter$new(
     id = "contents1",
@@ -532,19 +533,32 @@ server <- function(input, output, session) {
     removeClass(selector = "ul li:eq(4)", class = "inactiveLink")
   })
   
-  observeEvent(!is.null(data1()), {
-    addCssClass(selector = "a[data-value='matrixLoad']", class = "doneLink")
-    addClass(selector = "ul li:eq(1)", class = "doneLink")
+  observeEvent(data1(), {
+    if (!is.null(data1())) {
+      addCssClass(selector = "a[data-value='matrixLoad']", class = "doneLink")
+      addClass(selector = "ul li:eq(1)", class = "doneLink")
+    }
   })
   
-  observeEvent(!is.null(data2()), {
-    addCssClass(selector = "a[data-value='metadataLoad']", class = "doneLink")
-    addClass(selector = "ul li:eq(2)", class = "doneLink")
+  observeEvent(input$metadataCellType, {
+    if (input$metadataCellType != "") {
+      addCssClass(selector = "a[data-value='metadataLoad']", class = "doneLink")
+      addClass(selector = "ul li:eq(2)", class = "doneLink")
+    }
   })
   
-  observeEvent(!is.null(data3()), {
-    addCssClass(selector = "a[data-value='clusterRef']", class = "doneLink")
-    addClass(selector = "ul li:eq(3)", class = "doneLink")
+  observeEvent(input[["activeTab"]], {
+    if (input[["activeTab"]] == "clusterRef") {
+      rv$ref_visited <<- 1
+      print(rv$ref_visited) 
+    }
+  })
+  
+  observeEvent(rv$ref_visited, {
+    if (rv$ref_visited == 1 & !is.null(data3())) {
+      addCssClass(selector = "a[data-value='clusterRef']", class = "doneLink")
+      addClass(selector = "ul li:eq(3)", class = "doneLink")      
+    }
   })
   
 

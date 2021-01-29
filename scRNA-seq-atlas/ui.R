@@ -6,9 +6,9 @@ ui <- dashboardPage(
       id = "tabs",
       menuItem("Dashboard", tabName = "dashboard", icon = icon("dashboard")),
       menuItem("Load Matrix", tabName = "matrixLoad", icon = icon("th")),
-      menuItem("Load Metadata", tabName = "metadataLoad", icon = icon("th")),
-      menuItem("Load Reference", tabName = "clusterRef", icon = icon("th")),
-      menuItem("Cell type inference", tabName = "clustifyres", icon = icon("th"))
+      menuItem("Load Metadata", tabName = "metadataLoad", icon = icon("list")),
+      menuItem("Load Reference", tabName = "clusterRef", icon = icon("database")),
+      menuItem("Cell type inference", tabName = "clustifyres", icon = icon("calculator"))
     )
   ),
   dashboardBody(
