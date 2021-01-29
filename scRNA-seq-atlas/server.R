@@ -135,11 +135,12 @@ server <- function(input, output, session) {
       return(df1 <- data.frame(`nodata` = rep("", 6)))
     }
     df1 <- data1()
-      df1 <- data.frame(`nodata` = rep("", 6))
     
     # file 1
     if (input$dispMat == "head") {
-      return(head(df1)[, 1:5])
+      cols <- ncol(df1)
+      df1 <- df1[, 1:min(cols, 5)]
+      return(head(df1))
     }
     else {
       return(df1)
@@ -380,14 +381,27 @@ server <- function(input, output, session) {
     row <- splitID[3]
     rv$loadinglink <<- rv$links$link[as.numeric(row)]
     print(rv$links)
-    previewdata <- preview_link(rv$links$link[as.numeric(row)])[, 1:5]
+    previewdata <- preview_link(rv$links$link[as.numeric(row)])
+    if (is.null(previewdata)) {
+      fullb <- F
+      previewdata <- data.frame(unreadable = rep("", 4))
+    } else {
+      fullb <- T
+      cols <- ncol(previewdata)
+      previewdata <-previewdata[, 1:min(cols, 5)]
+    }
+    
     w7$hide()
     showModal(modalDialog(
       size = "l",
       div(id = "modalback",
           title = "preview",
           DT::renderDataTable(previewdata),
-          actionButton("full", "Start full loading"),
+          if (fullb) {
+            actionButton("full", "Start full loading")
+          } else {
+            disabled(actionButton("full", "Start full loading"))
+          },
           actionButton("back", "Back to file list")
       ),
       easyClose = TRUE,

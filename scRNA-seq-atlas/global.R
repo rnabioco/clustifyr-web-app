@@ -138,9 +138,16 @@ preview_link <- function(link, n_row = 5, n_col = 50, verbose = T) {
     temp <- readLines(url1, n = n_row)
   }
   close(url1)
+  readable <- map(temp, function(x) {all(charToRaw(x[1]) <= as.raw(127))}) %>%
+    unlist() %>% 
+    all()
+  if (!readable) {
+    return(NULL)
+  }
   
   # parsing, using fread auto
-  temp_df <- data.table::fread(text = temp)#, header = TRUE, fill = TRUE)
+  temp_df <- tryCatch(data.table::fread(text = temp),#, header = TRUE, fill = TRUE),
+                      error = function() {"paring failed"})
   
   return(temp_df)
 }
