@@ -17,6 +17,9 @@ ui <- dashboardPage(
         tabName = "dashboard",
         # js stuff ----
         useShinyjs(),
+        tags$head(
+          tags$script(HTML(js2))
+        ),
         tags$head(tags$style(HTML('
             .skin-blue .sidebar .inactiveLink {
                 color: black;
@@ -56,7 +59,6 @@ ui <- dashboardPage(
         
         # Input: Checkbox if file has header ----
         checkboxInput("header", "Header", TRUE),
-        
         
         # Horizontal line ----
         tags$hr(),
@@ -112,6 +114,12 @@ ui <- dashboardPage(
                     ".rda"
                   )
         ),
+        
+        # GEO id load ----
+        actionButton("geo1", 
+                     "from GEO id",
+                     icon = icon("search")),
+        
         actionButton("matrixPopup", "Display UMI Matrix in popup"),
         DTOutput("contents1"), # UMI Count Matrix
         tags$hr()
@@ -131,6 +139,11 @@ ui <- dashboardPage(
                     ".rda"
                   )
         ),
+        
+        # GEO id load ----
+        actionButton("geo2", 
+                     "from GEO id",
+                     icon = icon("search")),
         
         actionButton("metadataPopup", "Display Metadata table in popup"),
         fluidRow(column(12, DTOutput('contents2'))),

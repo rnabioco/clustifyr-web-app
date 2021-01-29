@@ -1,13 +1,12 @@
 # Define server logic to read selected file ----
 server <- function(input, output, session) {
-
   # reactive file location to make interactivity easier
   rv <- reactiveValues()
   rv$matrixloc <- NULL
   rv$metaloc <- NULL
   rv$step <- 0
   rv$clustifym <- "clustifyr not yet run"
-
+  rv$lastgeo <- "GSE113049"
 
   # waiter checkpoints
   w1 <- Waiter$new(
@@ -54,7 +53,20 @@ server <- function(input, output, session) {
       h4("")
     )
   )
-
+  
+  w6 <- Waiter$new(id = "modalgeo",
+                   html = tagList(
+                     spin_flower(),
+                     h4("Info fetching..."),
+                     h4("")
+                   ))
+  
+  w7 <- Waiter$new(id = "modalfiles",
+                   html = tagList(
+                     spin_flower(),
+                     h4("File previewing..."),
+                     h4("")
+                   ))
   data1 <- reactive({
 
     # input$file1 will be NULL initially. After the user selects
@@ -119,10 +131,15 @@ server <- function(input, output, session) {
   })
 
   output$contents1 <- DT::renderDataTable({
+    if (is.null(rv$matrixloc)) {
+      return(df1 <- data.frame(`nodata` = rep("", 6)))
+    }
     df1 <- data1()
+      df1 <- data.frame(`nodata` = rep("", 6))
+    
     # file 1
     if (input$dispMat == "head") {
-      return(head(df1, cols = 5))
+      return(head(df1)[, 1:5])
     }
     else {
       return(df1)
@@ -130,6 +147,9 @@ server <- function(input, output, session) {
   })
 
   output$contents2 <- DT::renderDataTable({
+    if (is.null(rv$metaloc)) {
+      return(df2 <- data.frame(`nodata` = rep("", 6)))
+    }
     df2 <- data2()
     # file 2
     if (input$dispMeta == "head") {
@@ -302,6 +322,118 @@ server <- function(input, output, session) {
   output$clustifym <- renderUI(
     HTML(paste0(c(rv$clustifym, ""), collapse = "<br/><br/>"))
   )
+  
+  # modal for GEO id
+  observeEvent(
+    input$geo1 | input$geo2,
+    showModal(modalDialog(
+      div(id = "modalgeo",
+          textInput("geoid", "query GEO id", value = rv$lastgeo),
+          actionButton("geogo", "fetch file info")
+      ),
+      fade = FALSE
+    )),
+    ignoreInit = T
+  )
+  
+  observeEvent(
+    input$geogo,
+    {
+      w6$show()
+      rv$lastgeo <- input$geoid
+      rv$links <- list_geo(rv$lastgeo)
+      print(rv$links)
+      links2 <- cbind(rv$links %>% mutate(size = map(link, get_file_size)) %>% select(-link),
+                      button = sapply(1:nrow(rv$links), make_button("tbl1")), 
+                      stringsAsFactors = FALSE) %>% 
+        data.table::data.table()
+      links2 <- links2 %>% 
+        DT::datatable(options = list(
+          dom = "ftp", 
+          searchHighlight = TRUE,
+          paging = TRUE,
+          pageLength = 5,
+          scrollY = FALSE),
+          escape = ncol(links2)-1, fillContainer = TRUE)
+      w6$hide()
+      showModal(modalDialog(
+        size = "l",
+        div(id = "modalfiles",
+            DT::renderDataTable(links2),
+            tags$caption("try to make reference from GEO id"),
+            actionButton("email", label = "email author for missing data", 
+                         onclick = paste0('location.href="',
+                                          prep_email(rv$lastgeo),
+                                          '"'))
+        ),
+        easyClose = TRUE,
+        fade = FALSE
+      ))
+    }
+  )
+  
+  observeEvent(input[["button"]], {
+    print("button")
+    w7$show()
+    splitID <- strsplit(input[["button"]], "_")[[1]]
+    tbl <- splitID[2]
+    row <- splitID[3]
+    rv$loadinglink <<- rv$links$link[as.numeric(row)]
+    print(rv$links)
+    previewdata <- preview_link(rv$links$link[as.numeric(row)])[, 1:5]
+    w7$hide()
+    showModal(modalDialog(
+      size = "l",
+      div(id = "modalback",
+          title = "preview",
+          DT::renderDataTable(previewdata),
+          actionButton("full", "Start full loading"),
+          actionButton("back", "Back to file list")
+      ),
+      easyClose = TRUE,
+      fade = FALSE,
+      footer = NULL
+    ))
+  })
+  
+  observeEvent(input$full, {
+    print(rv$loadinglink)
+    if (input[["activeTab"]] == "matrixLoad") {
+      rv$matrixloc <- list(datapath = rv$loadinglink)
+    } else {
+      rv$metaloc <- list(datapath = rv$loadinglink)
+    }
+    print(rv$loadinglink)
+    removeModal()
+  })
+  
+  observeEvent(input$back, {
+    links2 <- cbind(rv$links %>% mutate(size = map(link, get_file_size)) %>% select(-link),
+                    button = sapply(1:nrow(rv$links), make_button("tbl1")), 
+                    stringsAsFactors = FALSE) %>% 
+      data.table::data.table() 
+    links2 <- links2 %>% 
+      DT::datatable(options = list(
+        dom = "ftp", 
+        searchHighlight = TRUE,
+        paging = TRUE,
+        pageLength = 5,
+        scrollY = FALSE),
+        escape = ncol(links2)-1, fillContainer = TRUE)
+    showModal(modalDialog(
+      size = "l",
+      div(id = "modalfiles",
+          DT::renderDataTable(links2),
+          tags$caption("try to make reference from GEO id"),
+          actionButton("email", label = "email author for missing data", 
+                       onclick = paste0('location.href="',
+                                        prep_email(rv$lastgeo),
+                                        '"'))
+      ),
+      easyClose = TRUE,
+      fade = FALSE
+    ))
+  })
   
   # disable menu at load
   addCssClass(selector = "a[data-value='clusterRefCol']", class = "inactiveLink")
