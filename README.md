@@ -20,7 +20,7 @@ between single cell RNA-seq datasets and reference data.
 ## Atlas and Clustifyr Data Hub
 The reference bulk RNA-seq data sets, sorted microarray
 expression data, single-cell gene signatures, and lists of marker genes
-are located in the accompanying [Clustifyr Data Hub]!(https://github.com/rnabioco/clustifyrdatahub).
+are located in the accompanying [Clustifyr Data Hub](https://github.com/rnabioco/clustifyrdatahub).
 Descriptions of each data set are present in the table below. 
 
 ## Available references include
