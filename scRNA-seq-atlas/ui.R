@@ -7,9 +7,9 @@ ui <- dashboardPage(
       menuItem("Dashboard", tabName = "dashboard", icon = icon("dashboard")),
       menuItem("Load Matrix", tabName = "matrixLoad", icon = icon("th")),
       menuItem("Load Metadata", tabName = "metadataLoad", icon = icon("th")),
-      menuItem("Choose cluster and ref column", tabName = "clusterRefCol", icon = icon("th"))
+      menuItem("Load Reference", tabName = "clusterRef", icon = icon("th")),
+      menuItem("Cell type inference", tabName = "clustifyres", icon = icon("th"))
     )
-    
   ),
   dashboardBody(
     tabItems(
@@ -151,13 +151,14 @@ ui <- dashboardPage(
         tags$hr(),
         textOutput("colclicked"),
         
-        h2("Choose cluster and reference column (cell types)"),
+        h2("Choose column in metadata with cluster information"),
         selectInput("metadataCellType", "Cell Type Metadata Column:",
                     choice = list("")
-        ),
-        
-        helpText("Choose cell type metadata column for average_clusters function"),
-        hr(),
+        )
+      ),
+      tabItem(
+        tabName = "clusterRef",
+        h2("Choose built-in reference dataset or upload average expression matrix"),
         selectInput("dataHubReference", "ClustifyrDataHub Reference:",
                     choices = list(
                       "ref_MCA", "ref_tabula_muris_drop", "ref_tabula_muris_facs",
@@ -166,12 +167,24 @@ ui <- dashboardPage(
                       "ref_mouse_atlas"
                     )
         ),
-        helpText("Choose reference cell atlas for clustify function"),
-        hr(),
-        helpText("Choose cell reference for clustify function"),
+        tags$hr(),
+        h2("Or load reference table"),
+        fileInput("file3", "Choose Reference Average Expression File",
+                  multiple = FALSE,
+                  accept = c(
+                    "text/csv",
+                    "text/comma-separated-values,text/plain",
+                    ".csv",
+                    ".xlsx",
+                    ".tsv",
+                    ".rds",
+                    ".rda"
+                  )
+        ),
+        DTOutput("contents3"),
       ),
       tabItem(
-        tabName = "clusterRefCol",
+        tabName = "clustifyres",
         box(id = "box_clustifym",
             collapsible = TRUE,
             collapsed = TRUE,

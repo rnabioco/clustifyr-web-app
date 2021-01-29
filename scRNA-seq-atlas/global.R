@@ -19,18 +19,21 @@ library(GEOquery)
 options(shiny.maxRequestSize = 1500 * 1024^2)
 options(repos = BiocManager::repositories())
 options(shiny.reactlog = TRUE)
-options(DT.options = list(
-  dom = "tp", 
-  paging = TRUE,
-  pageLength = 6,
-  scrollX = TRUE
-)
+options(
+  DT.options = list(
+    dom = "tp", 
+    paging = TRUE,
+    pageLength = 6,
+    scrollX = TRUE
+  )
 )
 
+# setup experimenthub
 eh <- ExperimentHub()
 refs <- query(eh, "clustifyrdatahub")
 ref_dict <- refs$ah_id %>% setNames(refs$title)
 
+# get clicked column
 js <- c(
   "table.on('click', 'td', function(){",
   "  var cell = table.cell(this);",

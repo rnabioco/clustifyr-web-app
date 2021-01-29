@@ -7,6 +7,7 @@ server <- function(input, output, session) {
   rv$step <- 0
   rv$clustifym <- "clustifyr not yet run"
   rv$lastgeo <- "GSE113049"
+  rv$ref <- NULL
 
   # waiter checkpoints
   w1 <- Waiter$new(
@@ -67,6 +68,16 @@ server <- function(input, output, session) {
                      h4("File previewing..."),
                      h4("")
                    ))
+  
+  w8 <- Waiter$new(
+    id = "contents3",
+    html = tagList(
+      spin_flower(),
+      h4("Reference loading..."),
+      h4("")
+    )
+  )
+  
   data1 <- reactive({
 
     # input$file1 will be NULL initially. After the user selects
@@ -130,6 +141,35 @@ server <- function(input, output, session) {
     df2
   })
 
+  data3a <- reactive({
+    if (!is.null(input$file3)) {
+      rv$ref <- input$file3
+    }
+    if (rv$ref == "built-in") {
+      return(NULL)
+    }
+    file <- rv$ref
+    
+    if (!is.null(file)) {
+      w8$show()
+      print(file)
+    }
+    
+    fileTypeFile3 <- tools::file_ext(file$datapath)
+    req(file)
+    
+    df3 <- fread(file$datapath) %>% #, header = input$header, sep = input$sepMeta) %>% 
+      as.data.frame()
+    
+    if (!has_rownames(df3)) {
+      rownames(df3) <- df3[, 1]
+      df3[, 1] <- NULL
+    }
+    
+    w8$hide()
+    df3
+  })
+  
   output$contents1 <- DT::renderDataTable({
     if (is.null(rv$matrixloc)) {
       return(df1 <- data.frame(`nodata` = rep("", 6)))
@@ -174,7 +214,39 @@ server <- function(input, output, session) {
     )
   })
   
+  data3b <- reactive({
+    w8$show()
+    rv$ref <- "built-in"
+    ref <- refs[[ref_dict[input$dataHubReference]]]
+    w8$show()
+    
+    ref
+  })
   
+  data3 <- reactive({
+    b <- data3b()
+    a <- data3a()
+    if (is.null(rv$ref)) {
+      return(data.frame(`nodata` = rep("", 6)))
+    } else if (rv$ref == "built-in") {
+      df3 <- b
+    } else {
+      df3 <- a
+    }
+    df3
+  })
+  
+  output$contents3 <- DT::renderDataTable({
+    df3 <- data3()
+    
+    # file 3
+    if (input$dispMat == "head") {
+      return(head(df3))
+    }
+    else {
+      return(df3)
+    }
+  })
 
   observeEvent(input$matrixPopup, {
     showModal(modalDialog(
@@ -213,7 +285,7 @@ server <- function(input, output, session) {
       return(NULL)
     }
     w4$show()
-    benchmarkRef <- refs[[ref_dict[input$dataHubReference]]]
+    benchmarkRef <- data3()
 
     UMIMatrix <- data1()
     matrixSeuratObject <- CreateSeuratObject(counts = UMIMatrix, project = "Seurat object matrix", min.cells = 0, min.features = 0)
@@ -226,7 +298,8 @@ server <- function(input, output, session) {
         input = matrixSeuratObject@assays$RNA@data,
         metadata = metadataCol,
         ref_mat = benchmarkRef,
-        query_genes = VariableFeatures(matrixSeuratObject)
+        query_genes = VariableFeatures(matrixSeuratObject),
+        verbose = TRUE
         ),
       type = "message"
     )
@@ -316,7 +389,7 @@ server <- function(input, output, session) {
       message("loading prepackaged data")
       rv$matrixloc <- list(datapath = "../data/example-input/matrix.csv")
       rv$metaloc <- list(datapath = "../data/example-input/meta-data.csv")
-      updateTabItems(session, "tabs", "clusterRefCol")
+      updateTabItems(session, "tabs", "metadataLoad")
     }
   )
   
@@ -450,13 +523,13 @@ server <- function(input, output, session) {
   })
   
   # disable menu at load
-  addCssClass(selector = "a[data-value='clusterRefCol']", class = "inactiveLink")
-  addCssClass(selector = "ul li:eq(3)", class = "inactiveLink")
+  addCssClass(selector = "a[data-value='clustifyres']", class = "inactiveLink")
+  addCssClass(selector = "ul li:eq(4)", class = "inactiveLink")
   
   # check if data is loaded
-  observeEvent(!is.null(data1()) + !is.null(data2()) == 2, {
-    removeCssClass(selector = "a[data-value='clusterRefCol']", class = "inactiveLink")
-    removeClass(selector = "ul li:eq(3)", class = "inactiveLink")
+  observeEvent(!is.null(data1()) + !is.null(data2()) + !is.null(data3()) == 3, {
+    removeCssClass(selector = "a[data-value='clustifyres']", class = "inactiveLink")
+    removeClass(selector = "ul li:eq(4)", class = "inactiveLink")
   })
   
   observeEvent(!is.null(data1()), {
@@ -468,5 +541,11 @@ server <- function(input, output, session) {
     addCssClass(selector = "a[data-value='metadataLoad']", class = "doneLink")
     addClass(selector = "ul li:eq(2)", class = "doneLink")
   })
+  
+  observeEvent(!is.null(data3()), {
+    addCssClass(selector = "a[data-value='clusterRef']", class = "doneLink")
+    addClass(selector = "ul li:eq(3)", class = "doneLink")
+  })
+  
 
 }
