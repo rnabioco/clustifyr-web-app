@@ -6,7 +6,7 @@ server <- function(input, output, session) {
   rv$metaloc <- NULL
   rv$step <- 0
   rv$clustifym <- "clustifyr not yet run"
-  rv$lastgeo <- "GSE113049"
+  rv$lastgeo <- "GSE151974"#GSE113049"
   rv$ref <- NULL
   rv$ref_visited <- 0
   
@@ -404,9 +404,11 @@ server <- function(input, output, session) {
     showModal(modalDialog(
       div(id = "modalgeo",
           textInput("geoid", "query GEO id", value = rv$lastgeo),
-          actionButton("geogo", "fetch file info")
+          actionButton("geogo", "Fetch file info", icon = icon("eye"))
       ),
-      fade = FALSE
+      easyClose = TRUE,
+      fade = FALSE,
+      footer = NULL
     )),
     ignoreInit = T
   )
@@ -429,20 +431,27 @@ server <- function(input, output, session) {
           paging = TRUE,
           pageLength = 5,
           scrollY = FALSE),
-          escape = ncol(links2)-1, fillContainer = TRUE)
+          escape = ncol(links2) - 1, fillContainer = TRUE)
+      url <- str_c("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", input$geoid)
       w6$hide()
       showModal(modalDialog(
         size = "l",
         div(id = "modalfiles",
-            DT::renderDataTable(links2),
-            tags$caption("try to make reference from GEO id"),
-            actionButton("email", label = "email author for missing data", 
-                         onclick = paste0('location.href="',
-                                          prep_email(rv$lastgeo),
-                                          '"'))
+            DT::renderDataTable(links2)
         ),
         easyClose = TRUE,
-        fade = FALSE
+        fade = FALSE,
+        footer = tagList(
+          actionButton("geopage", label = "Go to GEO page",
+                       onclick = paste0('window.open("',
+                                        url,
+                                        '", "_blank")'),
+                       icon = icon("link")),
+          actionButton("email", label = "Email author for missing data", 
+                       onclick = paste0('location.href="',
+                                        prep_email(rv$lastgeo),
+                                        '"'),
+                       icon = icon("envelope-open-text")))
       ))
     }
   )
@@ -455,12 +464,20 @@ server <- function(input, output, session) {
     row <- splitID[3]
     rv$loadinglink <<- rv$links$link[as.numeric(row)]
     print(rv$links)
-    previewdata <- preview_link(rv$links$link[as.numeric(row)])
+    
+    # if tar, read a file list
+    if (str_detect(rv$links$link[as.numeric(row)], "/GSE[0-9]+_RAW.tar")) {
+      fullb <- F
+      previewdata <- preview_link(get_tar(rv$links$link[as.numeric(row)]))
+    } else {
+      fullb <- T
+      previewdata <- preview_link(rv$links$link[as.numeric(row)])
+    }
+    
     if (is.null(previewdata)) {
       fullb <- F
       previewdata <- data.frame(unreadable = rep("", 4))
     } else {
-      fullb <- T
       cols <- ncol(previewdata)
       previewdata <-previewdata[, 1:min(cols, 5)]
     }
@@ -472,11 +489,11 @@ server <- function(input, output, session) {
           title = "preview",
           DT::renderDataTable(previewdata),
           if (fullb) {
-            actionButton("full", "Start full loading")
+            actionButton("full", "Start full loading", icon = icon("running"))
           } else {
-            disabled(actionButton("full", "Start full loading"))
+            disabled(actionButton("full", "Start full loading", icon = icon("running")))
           },
-          actionButton("back", "Back to file list")
+          actionButton("back", "Back to file list", icon = icon("step-backward"))
       ),
       easyClose = TRUE,
       fade = FALSE,
@@ -508,18 +525,25 @@ server <- function(input, output, session) {
         pageLength = 5,
         scrollY = FALSE),
         escape = ncol(links2)-1, fillContainer = TRUE)
+    url <- str_c("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", input$geoid)
     showModal(modalDialog(
       size = "l",
       div(id = "modalfiles",
-          DT::renderDataTable(links2),
-          tags$caption("try to make reference from GEO id"),
-          actionButton("email", label = "email author for missing data", 
-                       onclick = paste0('location.href="',
-                                        prep_email(rv$lastgeo),
-                                        '"'))
+          DT::renderDataTable(links2)
       ),
       easyClose = TRUE,
-      fade = FALSE
+      fade = FALSE,
+      footer = tagList(
+        actionButton("geopage", label = "Go to GEO page",
+                     onclick = paste0('window.open("',
+                                      url,
+                                      '", "_blank")'),
+                     icon = icon("link")),
+        actionButton("email", label = "Email author for missing data", 
+                     onclick = paste0('location.href="',
+                                      prep_email(rv$lastgeo),
+                                      '"'),
+                     icon = icon("envelope-open-text")))
     ))
   })
   

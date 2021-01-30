@@ -56,9 +56,17 @@ $(document).ready(function(){
 make_button <- function(tbl){
   function(i){
     sprintf(
-      paste0('<button id="button_%s_%d', '_', Sys.time(), '" type="button" onclick="%s">Load</button>'), 
+      paste0('<button id="button_%s_%d', '_', format(Sys.time(), "%H_%M_%S"), '" type="button" onclick="%s">Preview</button>'), 
       tbl, i, "Shiny.setInputValue('button', this.id);")
   }
+}
+
+get_tar <- function(link) {
+  paste0(
+    str_remove(link, "/GSE[0-9]+_RAW.tar"),
+    "/filelist.txt"
+  )
+  # str_c("https://ftp.ncbi.nlm.nih.gov/geo/series/", str_sub(id, 1, str_length(id) - 3), "nnn/", id, "/suppl/filelist.txt")
 }
 
 get_file_size <- function(url) {
