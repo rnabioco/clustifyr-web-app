@@ -162,3 +162,11 @@ preview_link <- function(link, n_row = 5, n_col = 50, verbose = T) {
   
   return(temp_df)
 }
+
+# load rdata to file name
+load_rdata <- function(file) {
+  env <- new.env()
+  nm <- load(file, envir = env)[1]
+  env[[nm]]
+}
+

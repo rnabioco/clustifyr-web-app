@@ -98,9 +98,14 @@ server <- function(input, output, session) {
 
     fileTypeFile1 <- tools::file_ext(file$datapath)
     req(file)
-    
-    df1 <- fread(file$datapath) %>% # , header = input$header, sep = input$sepMat) %>% 
-      as.data.frame()
+    if (str_to_lower(fileTypeFile1) == "rds") {
+      df1 <- readRDS(file$datapath) %>% as.data.frame()
+    } else if (str_to_lower(fileTypeFile1) == "rdata") {
+      df1 <- load_rdata(file$datapath) %>% as.data.frame()
+    } else {
+      df1 <- fread(file$datapath) %>% # , header = input$header, sep = input$sepMat) %>% 
+        as.data.frame()
+    }
     
     if (!has_rownames(df1)) {
         rownames(df1) <- df1[, 1]
@@ -124,9 +129,14 @@ server <- function(input, output, session) {
 
     fileTypeFile2 <- tools::file_ext(file$datapath)
     req(file)
-    
-    df2 <- fread(file$datapath) %>% #, header = input$header, sep = input$sepMeta) %>% 
-      as.data.frame()
+    if (str_to_lower(fileTypeFile2) == "rds") {
+      df2 <- readRDS(file$datapath) %>% as.data.frame()
+    } else if (str_to_lower(fileTypeFile2) == "rdata") {
+      df2 <- load_rdata(file$datapath) %>% as.data.frame()
+    } else {
+      df2 <- fread(file$datapath) %>% # , header = input$header, sep = input$sepMat) %>% 
+        as.data.frame()
+    }
     
     if (!has_rownames(df2)) {
       rownames(df2) <- df2[, 1]
@@ -159,8 +169,14 @@ server <- function(input, output, session) {
     fileTypeFile3 <- tools::file_ext(file$datapath)
     req(file)
     
-    df3 <- fread(file$datapath) %>% #, header = input$header, sep = input$sepMeta) %>% 
-      as.data.frame()
+    if (str_to_lower(fileTypeFile3) == "rds") {
+      df3 <- readRDS(file$datapath) %>% as.data.frame()
+    } else if (str_to_lower(fileTypeFile3) == "rdata") {
+      df3 <- load_rdata(file$datapath) %>% as.data.frame()
+    } else {
+      df3 <- fread(file$datapath) %>% # , header = input$header, sep = input$sepMat) %>% 
+        as.data.frame()
+    }
     
     if (!has_rownames(df3)) {
       rownames(df3) <- df3[, 1]
