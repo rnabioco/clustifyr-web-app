@@ -9,6 +9,7 @@ server <- function(input, output, session) {
   rv$lastgeo <- "GSE151974"#GSE113049"
   rv$ref <- NULL
   rv$ref_visited <- 0
+  rv$obj <- NULL
   
   # waiter checkpoints
   w1 <- Waiter$new(
@@ -87,9 +88,7 @@ server <- function(input, output, session) {
 
     if (!is.null(input$file1)) {
       rv$matrixloc <- input$file1
-    }
-
-    file <- rv$matrixloc
+      file <- rv$matrixloc
 
     if (!is.null(file)) {
       w1$show()
@@ -99,14 +98,27 @@ server <- function(input, output, session) {
     fileTypeFile1 <- tools::file_ext(file$datapath)
     req(file)
     if (str_to_lower(fileTypeFile1) == "rds") {
-      df1 <- readRDS(file$datapath) %>% as.data.frame()
+      df1 <- readRDS(file$datapath) 
+      if (any(class(df1) %in% c("SingleCellExperiment", "Seurat"))) {
+        rv$obj <- df1
+        df1 <- object_data(rv$obj, "data")
+      }
     } else if (str_to_lower(fileTypeFile1) == "rdata") {
-      df1 <- load_rdata(file$datapath) %>% as.data.frame()
+      df1 <- load_rdata(file$datapath)
+      if (any(class(df1) %in% c("SingleCellExperiment", "Seurat"))) {
+        rv$obj <- df1
+        df1 <- object_data(df1, "data")
+      }
     } else {
-      df1 <- fread(file$datapath) %>% # , header = input$header, sep = input$sepMat) %>% 
-        as.data.frame()
+      df1 <- fread(file$datapath) # , header = input$header, sep = input$sepMat) %>% 
+    }
+    } else if (!is.null(rv$obj)) {
+      df1 <- object_data(rv$obj, "data")
+    } else {
+      return(NULL)
     }
     
+    df1 <- df1 %>% as.data.frame()
     if (!has_rownames(df1)) {
         rownames(df1) <- df1[, 1]
         df1[, 1] <- NULL
@@ -119,8 +131,7 @@ server <- function(input, output, session) {
   data2 <- reactive({
     if (!is.null(input$file2)) {
       rv$metaloc <- input$file2
-    }
-    file <- rv$metaloc
+      file <- rv$metaloc
 
     if (!is.null(file)) {
       w2$show()
@@ -130,23 +141,31 @@ server <- function(input, output, session) {
     fileTypeFile2 <- tools::file_ext(file$datapath)
     req(file)
     if (str_to_lower(fileTypeFile2) == "rds") {
-      df2 <- readRDS(file$datapath) %>% as.data.frame()
+      df2 <- readRDS(file$datapath)
+      if (any(class(df2) %in% c("SingleCellExperiment", "Seurat"))) {
+        rv$obj <- df2
+        df2 <- object_data(df2, "meta.data")
+      }
     } else if (str_to_lower(fileTypeFile2) == "rdata") {
-      df2 <- load_rdata(file$datapath) %>% as.data.frame()
+      df2 <- load_rdata(file$datapath)
+      if (any(class(df2) %in% c("SingleCellExperiment", "Seurat"))) {
+        rv$obj <- df2
+        df2 <- object_data(rv$obj, "meta.data")
+      }
     } else {
-      df2 <- fread(file$datapath) %>% # , header = input$header, sep = input$sepMat) %>% 
-        as.data.frame()
+      df2 <- fread(file$datapath) # , header = input$header, sep = input$sepMat) %>% 
+    }
+    } else if (!is.null(rv$obj)) {
+      df2 <- object_data(rv$obj, "meta.data")
+    } else {
+      return(NULL)
     }
     
+    df2 <- df2 %>% as.data.frame()
     if (!has_rownames(df2)) {
       rownames(df2) <- df2[, 1]
       df2[, 1] <- NULL
     }
-
-    updateSelectInput(session, "metadataCellType",
-      choices = c("", colnames(df2)),
-      selected = ""
-    )
     
     w2$hide()
     df2
@@ -188,10 +207,11 @@ server <- function(input, output, session) {
   })
   
   output$contents1 <- DT::renderDataTable({
-    if (is.null(rv$matrixloc)) {
+    if (is.null(rv$matrixloc) & is.null(rv$obj)) {
       return(df1 <- data.frame(`nodata` = rep("", 6)))
+    } else {
+      df1 <- data1()
     }
-    df1 <- data1()
     
     # file 1
     if (input$dispMat == "head") {
@@ -205,10 +225,17 @@ server <- function(input, output, session) {
   })
 
   output$contents2 <- DT::renderDataTable({
-    if (is.null(rv$metaloc)) {
+    if (is.null(rv$metaloc) & is.null(rv$obj)) {
       return(df2 <- data.frame(`nodata` = rep("", 6)))
+    } else {
+      df2 <- data2()
     }
-    df2 <- data2()
+
+    updateSelectInput(session, "metadataCellType",
+                      choices = c("", colnames(df2)),
+                      selected = ""
+    )
+    
     # file 2
     if (input$dispMeta == "head") {
       return(head(df2))
@@ -304,15 +331,27 @@ server <- function(input, output, session) {
     w4$show()
     benchmarkRef <- data3()
 
-    UMIMatrix <- data1()
-    matrixSeuratObject <- CreateSeuratObject(counts = UMIMatrix, project = "Seurat object matrix", min.cells = 0, min.features = 0)
-    matrixSeuratObject <- FindVariableFeatures(matrixSeuratObject, selection.method = "vst", nfeatures = 2000)
-
+    if (!is.null(rv$obj)) {
+      message("Single cell object detected")
+      matrixSeuratObject <- rv$obj
+      if (any(class(matrixSeuratObject) == "SingleCellExperiment")) {
+        matrixSeuratObject <- as.Seurat(matrixSeuratObject)
+      }
+    } else {
+      UMIMatrix <- data1()
+      matrixSeuratObject <- CreateSeuratObject(counts = UMIMatrix, project = "Seurat object matrix", min.cells = 0, min.features = 0)
+    }
+    if (VariableFeatures(matrixSeuratObject) %>% length() == 0) {
+      matrixSeuratObject <- FindVariableFeatures(matrixSeuratObject, selection.method = "vst", nfeatures = 2000)
+    } else {
+      message("Using variable genes in object")
+    }
+    
     metadataCol <- data2()[[input$metadataCellType]]
     # use for classification of cell types
     messages <<- capture.output(
       res <- clustify(
-        input = matrixSeuratObject@assays$RNA@data,
+        input = object_data(matrixSeuratObject, "data"),
         metadata = metadataCol,
         ref_mat = benchmarkRef,
         query_genes = VariableFeatures(matrixSeuratObject),
@@ -568,9 +607,15 @@ server <- function(input, output, session) {
   addCssClass(selector = "ul li:eq(4)", class = "inactiveLink")
   
   # check if data is loaded
-  observeEvent(!is.null(data1()) + !is.null(data2()) + !is.null(data3()) == 3, {
-    removeCssClass(selector = "a[data-value='clustifyres']", class = "inactiveLink")
-    removeClass(selector = "ul li:eq(4)", class = "inactiveLink")
+  observeEvent((!is.null(data1())) + (!is.null(data2())) + (!is.null(data3())) + 
+                 (!is.null(input$metadataCellType)) + 
+                 (input$metadataCellType != ""), {
+    if ((!is.null(data1())) + (!is.null(data2())) + (!is.null(data3())) + 
+        (!is.null(input$metadataCellType)) + 
+        (input$metadataCellType != "") == 5) {
+      removeCssClass(selector = "a[data-value='clustifyres']", class = "inactiveLink")
+      removeClass(selector = "ul li:eq(4)", class = "inactiveLink")
+    }
   })
   
   observeEvent(data1(), {

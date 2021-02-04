@@ -170,3 +170,7 @@ load_rdata <- function(file) {
   env[[nm]]
 }
 
+# load object, check if seurat or sce
+# check_obj <- function(obj, string) {
+#   if ()
+# }
