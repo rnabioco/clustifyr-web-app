@@ -149,7 +149,7 @@ ui <- dashboardPage(
         fluidRow(column(12, DTOutput('contents2'))),
         #DT::dataTableOutput("contents2"), # Metadata table
         tags$hr(),
-        textOutput("colclicked"),
+        uiOutput("colclicked"),
         
         h2("Choose column in metadata with cluster information"),
         selectInput("metadataCellType", "Cell Type Metadata Column:",
@@ -167,6 +167,9 @@ ui <- dashboardPage(
                       "ref_mouse_atlas"
                     )
         ),
+        actionButton("ref_linkgo", 
+                     label = "Go to original source",
+                     icon = icon("link")),
         tags$hr(),
         h2("Or load reference table"),
         fileInput("file3", "Choose Reference Average Expression File",
@@ -182,6 +185,7 @@ ui <- dashboardPage(
                   )
         ),
         DTOutput("contents3"),
+        uiOutput("ref_summary")
       ),
       tabItem(
         tabName = "clustifyres",
@@ -196,9 +200,9 @@ ui <- dashboardPage(
         downloadButton("downloadClustify", "Download clustify matrix"),
         actionButton("uploadClustify", "Upload reference matrix"),
         
-        DT::dataTableOutput("reference"), # Reference Matrix
+        DT::dataTableOutput("reference", height = "300px"), # Reference Matrix
         tags$hr(),
-        DT::dataTableOutput("clustify"), # Clustify Matrix
+        DT::dataTableOutput("clustify", height = "300px"), # Clustify Matrix
         tags$hr(),
         plotOutput("hmap", height = "600px")
       )

@@ -9,6 +9,8 @@ server <- function(input, output, session) {
   rv$lastgeo <- "GSE151974"#GSE113049"
   rv$ref <- NULL
   rv$ref_visited <- 0
+  rv$ref_link <- NULL
+  rv$res_visited <- 0
   rv$obj <- NULL
   
   # waiter checkpoints
@@ -85,9 +87,11 @@ server <- function(input, output, session) {
     # input$file1 will be NULL initially. After the user selects
     # and uploads a file, head of that data file by default,
     # or all rows if selected, will be shown.
-
-    if (!is.null(input$file1)) {
-      rv$matrixloc <- input$file1
+    
+    if (!is.null(input$file1) | !is.null(rv$matrixloc)) {
+      if (!is.null(input$file1)) {
+        rv$matrixloc <- input$file1
+      }
       file <- rv$matrixloc
 
     if (!is.null(file)) {
@@ -110,7 +114,7 @@ server <- function(input, output, session) {
         df1 <- object_data(df1, "data")
       }
     } else {
-      df1 <- fread(file$datapath) # , header = input$header, sep = input$sepMat) %>% 
+      df1 <- fread(file$datapath)
     }
     } else if (!is.null(rv$obj)) {
       df1 <- object_data(rv$obj, "data")
@@ -129,8 +133,10 @@ server <- function(input, output, session) {
   })
 
   data2 <- reactive({
-    if (!is.null(input$file2)) {
-      rv$metaloc <- input$file2
+    if (!is.null(input$file2) | !is.null(rv$metaloc)) {
+      if (!is.null(input$file2)) {
+        rv$metaloc <- input$file2
+      }
       file <- rv$metaloc
 
     if (!is.null(file)) {
@@ -153,7 +159,7 @@ server <- function(input, output, session) {
         df2 <- object_data(rv$obj, "meta.data")
       }
     } else {
-      df2 <- fread(file$datapath) # , header = input$header, sep = input$sepMat) %>% 
+      df2 <- fread(file$datapath)
     }
     } else if (!is.null(rv$obj)) {
       df2 <- object_data(rv$obj, "meta.data")
@@ -248,8 +254,12 @@ server <- function(input, output, session) {
   callback = DT::JS(js), 
   selection = list(target = 'column', mode = "single"))
   
-  output$colclicked <- renderPrint({
-    input[["column_clicked"]]
+  output$colclicked <- renderUI({
+    if (is.null(input[["column_clicked"]])) {
+      "please select cluster column in drop-down menu, or click in the table"
+    } else {
+      input$metadataCellType
+    }
   })
   
   observeEvent(input[["column_clicked"]], {
@@ -258,10 +268,17 @@ server <- function(input, output, session) {
     )
   })
   
+  output$ref_summary <- renderUI({
+    HTML(paste0("cell types: ", ncol(data3()),
+           "<br>",
+           "genes: ", nrow(data3())))
+  })
+  
   data3b <- reactive({
     w8$show()
     rv$ref <- "built-in"
     ref <- refs[[ref_dict[input$dataHubReference]]]
+    rv$ref_link <- refs_meta[ref_dict[input$dataHubReference], ] %>% pull(sourceurl)
     w8$show()
     
     ref
@@ -314,7 +331,7 @@ server <- function(input, output, session) {
     ))
   })
   
-  dataRef <- reactive({
+  data_avg <- reactive({
     if (input$metadataCellType == "") {
       return(NULL)
     }
@@ -364,20 +381,22 @@ server <- function(input, output, session) {
     w4$hide()
     res
   })
-
+  
   output$reference <- DT::renderDataTable({
-    reference_matrix <- dataRef()
-    if (is.null(reference_matrix)) {
-      return(NULL)
+    if (rv$res_visited == 1) {
+      message("empty")
+      return(df1 <- data.frame(`nodata` = rep("", 6)))
     }
+    reference_matrix <- data_avg()
     rownames_to_column(as.data.frame(reference_matrix), input$metadataCellType)
   })
 
   output$clustify <- DT::renderDataTable({
-    res <- dataClustify()
-    if (is.null(res)) {
-      return(NULL)
+    if (rv$res_visited == 1) {
+      message("empty2")
+      return(df1 <- data.frame(`nodata` = rep("", 6)))
     }
+    res <- dataClustify()
     rownames_to_column(as.data.frame(res), input$metadataCellType)
   })
 
@@ -412,7 +431,7 @@ server <- function(input, output, session) {
   })
 
   referenceDownload <- reactive({
-    referenceMatrix <- dataRef()
+    avgMatrix <- data_avg()
   })
 
   clustifyDownload <- reactive({
@@ -424,8 +443,7 @@ server <- function(input, output, session) {
       paste("reference-", Sys.Date(), ".csv", sep = "")
     },
     content = function(file) {
-      write.csv(referenceDownload(), file)
-      # mat %>% as_tibble(rownames = "rowname") %>% write_csv("mat.csv")
+      write.csv(referenceDownload(), file, quote = FALSE)
     }
   )
   output$downloadClustify <- downloadHandler(
@@ -433,8 +451,7 @@ server <- function(input, output, session) {
       cat("clustify-", Sys.Date(), ".csv", sep = "")
     },
     content = function(file) {
-      write.csv(clustifyDownload(), file)
-      # mat %>% as_tibble(rownames = "rowname") %>% write_csv("mat.csv")
+      write.csv(clustifyDownload(), file, quote = FALSE)
     }
   )
 
@@ -635,7 +652,9 @@ server <- function(input, output, session) {
   observeEvent(input[["activeTab"]], {
     if (input[["activeTab"]] == "clusterRef") {
       rv$ref_visited <<- 1
-      print(rv$ref_visited) 
+    } else if (input[["activeTab"]] == "clustifyres") {
+      if (rv$res_visited == 0)
+      rv$res_visited <<- 1
     }
   })
   
@@ -646,5 +665,15 @@ server <- function(input, output, session) {
     }
   })
   
-
+  observeEvent(rv$res_visited, {
+    if (rv$res_visited == 1) {
+      print("change")
+      rv$res_visited <- 2
+    }
+  }, ignoreInit = FALSE)
+  
+  observeEvent(rv$ref_link, {
+    runjs(paste0("document.getElementById('ref_linkgo').onclick = function() { 
+           window.open('", rv$ref_link, "', '_blank');};"))
+  })
 }

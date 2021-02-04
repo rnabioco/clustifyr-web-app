@@ -31,6 +31,7 @@ options(
 # setup experimenthub
 eh <- ExperimentHub()
 refs <- query(eh, "clustifyrdatahub")
+refs_meta <- mcols(refs) %>% as.data.frame()
 ref_dict <- refs$ah_id %>% setNames(refs$title)
 
 # get clicked column
