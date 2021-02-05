@@ -14,7 +14,7 @@ library(data.table)
 library(R.utils)
 library(DT)
 library(GEOquery)
-# library(ComplexHeatmap)
+library(pheatmap)
 
 options(shiny.maxRequestSize = 1500 * 1024^2)
 options(repos = BiocManager::repositories())
