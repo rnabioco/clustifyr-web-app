@@ -484,7 +484,7 @@ server <- function(input, output, session) {
       paste("clustify-", Sys.Date(), ".xlsx", sep = "")
     },
     content = function(file) {
-      write.xlsx(list(corToCall(), clustifyDownload()), file, quote = FALSE)
+      write.xlsx(list(corToCall(), clustifyDownload()), file, quote = FALSE, rowNames = TRUE)
     }
   )
   
