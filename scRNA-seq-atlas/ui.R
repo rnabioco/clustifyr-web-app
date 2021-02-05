@@ -111,7 +111,8 @@ ui <- dashboardPage(
                     ".xlsx",
                     ".tsv",
                     ".rds",
-                    ".rda"
+                    ".rda",
+                    ".rdata"
                   )
         ),
         
@@ -136,7 +137,8 @@ ui <- dashboardPage(
                     ".xlsx",
                     ".tsv",
                     ".rds",
-                    ".rda"
+                    ".rda",
+                    ".rdata"
                   )
         ),
         

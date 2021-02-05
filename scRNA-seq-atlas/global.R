@@ -1,10 +1,12 @@
 library(shiny)
 library(shinyjs)
+library(shinyWidgets)
 library(waiter)
 library(dplyr)
 library(readr)
 library(tools)
 library(clustifyr)
+library(clustifyrdatahub)
 library(rsconnect)
 library(ExperimentHub)
 library(Seurat)
@@ -14,6 +16,7 @@ library(data.table)
 library(R.utils)
 library(DT)
 library(GEOquery)
+library(googlesheets4)
 # library(ComplexHeatmap)
 
 options(shiny.maxRequestSize = 1500 * 1024^2)
@@ -27,6 +30,10 @@ options(
     scrollX = TRUE
   )
 )
+
+# google sheet
+gs4_auth(cache = ".sheet", email = TRUE, use_oob = TRUE)
+sheetid <- "https://docs.google.com/spreadsheets/d/107qXuwo568wmPikaNDIe1supkGOYakwnRhiaTaL7U8c"
 
 # setup experimenthub
 eh <- ExperimentHub()

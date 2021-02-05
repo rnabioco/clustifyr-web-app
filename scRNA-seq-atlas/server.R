@@ -107,13 +107,14 @@ server <- function(input, output, session) {
         rv$obj <- df1
         df1 <- object_data(rv$obj, "data")
       }
-    } else if (str_to_lower(fileTypeFile1) == "rdata") {
+    } else if (str_to_lower(fileTypeFile1) == "rdata" | str_to_lower(fileTypeFile1) == "rda") {
       df1 <- load_rdata(file$datapath)
       if (any(class(df1) %in% c("SingleCellExperiment", "Seurat"))) {
         rv$obj <- df1
         df1 <- object_data(df1, "data")
       }
     } else {
+      print("Step1")
       df1 <- fread(file$datapath)
     }
     } else if (!is.null(rv$obj)) {
@@ -122,7 +123,9 @@ server <- function(input, output, session) {
       return(NULL)
     }
     
+    print("step2")
     df1 <- df1 %>% as.data.frame()
+    print("step3")
     if (!has_rownames(df1)) {
         rownames(df1) <- df1[, 1]
         df1[, 1] <- NULL
@@ -152,7 +155,7 @@ server <- function(input, output, session) {
         rv$obj <- df2
         df2 <- object_data(df2, "meta.data")
       }
-    } else if (str_to_lower(fileTypeFile2) == "rdata") {
+    } else if (str_to_lower(fileTypeFile2) == "rdata" | str_to_lower(fileTypeFile2) == "rda") {
       df2 <- load_rdata(file$datapath)
       if (any(class(df2) %in% c("SingleCellExperiment", "Seurat"))) {
         rv$obj <- df2
@@ -196,7 +199,7 @@ server <- function(input, output, session) {
     
     if (str_to_lower(fileTypeFile3) == "rds") {
       df3 <- readRDS(file$datapath) %>% as.data.frame()
-    } else if (str_to_lower(fileTypeFile3) == "rdata") {
+    } else if (str_to_lower(fileTypeFile3) == "rdata" | str_to_lower(fileTypeFile3) == "rda") {
       df3 <- load_rdata(file$datapath) %>% as.data.frame()
     } else {
       df3 <- fread(file$datapath) %>% # , header = input$header, sep = input$sepMat) %>% 
@@ -523,7 +526,10 @@ server <- function(input, output, session) {
                        onclick = paste0('location.href="',
                                         prep_email(rv$lastgeo),
                                         '"'),
-                       icon = icon("envelope-open-text")))
+                       icon = icon("envelope-open-text")),
+          actionButton("sheet", label = "Spot check for someta", 
+                       icon = icon("feather-alt"))
+        )
       ))
     }
   )
@@ -584,6 +590,47 @@ server <- function(input, output, session) {
     removeModal()
   })
   
+  observeEvent(input$sheet, {
+    showModal(modalDialog(
+      size = "l",
+      div(id = "modalsheet",
+          title = "Please fill out",
+          renderUI(h2(rv$lastgeo)),
+          hr(),
+          strong(materialSwitch(
+            "issc",
+            "is single cell data",
+            value = TRUE,
+            status = "success",
+            right = TRUE,
+            inline = FALSE,
+            width = NULL
+          )),
+          strong(materialSwitch(
+            "hasmeta",
+            "has metadata",
+            value = TRUE,
+            status = "success",
+            right = TRUE,
+            inline = FALSE,
+            width = NULL
+          )),
+          strong(materialSwitch(
+            "hascellcol",
+            "has cell type column in metadata",
+            value = TRUE,
+            status = "success",
+            right = TRUE,
+            inline = FALSE,
+            width = NULL
+          )),
+          textInput("comment", "", placeholder = "Additional comments")
+      ),
+      easyClose = TRUE,
+      fade = FALSE,
+      footer = actionButton("submit", "Submit", icon = icon("feather-alt"))
+    ))
+  })
   observeEvent(input$back, {
     links2 <- cbind(rv$links %>% mutate(size = map(link, get_file_size)) %>% select(-link),
                     button = sapply(1:nrow(rv$links), make_button("tbl1")), 
@@ -615,7 +662,29 @@ server <- function(input, output, session) {
                      onclick = paste0('location.href="',
                                       prep_email(rv$lastgeo),
                                       '"'),
-                     icon = icon("envelope-open-text")))
+                     icon = icon("envelope-open-text")),
+        actionButton("sheet", label = "Spot check for someta", 
+                     icon = icon("feather-alt"))
+        )
+    ))
+  })
+  
+  # upload to google sheet
+  observeEvent(input$submit, {
+    sheet_append(sheetid, data.frame(id = rv$lastgeo,
+                                     issc = input$issc,
+                                     hasmeta = input$hasmeta,
+                                     hascellcol = input$hascellcol,
+                                     comment = input$comment))
+    print(read_sheet(sheetid, 1))
+    
+    showModal(modalDialog(
+      div(id = "modaldone",
+          h2("Results uploaded, thank you!")
+      ),
+      easyClose = TRUE,
+      fade = FALSE,
+      footer = NULL
     ))
   })
   
