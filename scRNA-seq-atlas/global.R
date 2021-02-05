@@ -21,7 +21,7 @@ options(repos = BiocManager::repositories())
 options(shiny.reactlog = TRUE)
 options(
   DT.options = list(
-    dom = "tp", 
+    dom = "tp",
     paging = TRUE,
     pageLength = 6,
     scrollX = TRUE
@@ -57,7 +57,7 @@ $(document).ready(function(){
 make_button <- function(tbl){
   function(i){
     sprintf(
-      paste0('<button id="button_%s_%d', '_', format(Sys.time(), "%H_%M_%S"), '" type="button" onclick="%s">Preview</button>'), 
+      paste0('<button id="button_%s_%d', '_', format(Sys.time(), "%H_%M_%S"), '" type="button" onclick="%s">Preview</button>'),
       tbl, i, "Shiny.setInputValue('button', this.id);")
   }
 }
@@ -85,16 +85,16 @@ list_geo <- function(id) {
                   error = function(e) {
                     "error_get"
                   })
-  
+
   # make links
-  out <- data.frame(file = out) %>% 
+  out <- data.frame(file = out) %>%
     mutate(link = str_c("https://ftp.ncbi.nlm.nih.gov/geo/series/GSE",
                         str_extract(file, "[0-9]{3}"),
                         "nnn/",
                         id,
                         "/suppl/",
                         file))
-  
+
   out
 }
 
@@ -119,7 +119,7 @@ prep_email <- function(id) {
     } else {
       email <- out@header$contact_email
     }
-    
+
     link <- paste0("mailto:",
                    email,
                    "?subject=additional info request for ",
@@ -140,7 +140,7 @@ preview_link <- function(link, n_row = 5, n_col = 50, verbose = T) {
   if (!str_starts(str_to_lower(link), "http")) {
     return(NA)
   }
-  
+
   # stream in a few lines only
   message("read")
   url1 <- url(link)
@@ -151,16 +151,16 @@ preview_link <- function(link, n_row = 5, n_col = 50, verbose = T) {
   }
   close(url1)
   readable <- map(temp, function(x) {all(charToRaw(x[1]) <= as.raw(127))}) %>%
-    unlist() %>% 
+    unlist() %>%
     all()
   if (!readable) {
     return(NULL)
   }
-  
+
   # parsing, using fread auto
   temp_df <- tryCatch(data.table::fread(text = temp),#, header = TRUE, fill = TRUE),
                       error = function() {"paring failed"})
-  
+
   return(temp_df)
 }
 
@@ -171,7 +171,18 @@ load_rdata <- function(file) {
   env[[nm]]
 }
 
+# Plot correlation heatmap
+plot_hmap <- function (cor_mat,
+                       col = clustifyr:::not_pretty_palette,
+                       legend_title = NULL,
+                       ...) {
+  pheatmap::pheatmap(cor_mat,
+                     color = colorRampPalette(col)(100),
+                     ...)
+}
+
 # load object, check if seurat or sce
 # check_obj <- function(obj, string) {
 #   if ()
 # }
+
