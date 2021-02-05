@@ -14,6 +14,7 @@ library(data.table)
 library(R.utils)
 library(DT)
 library(GEOquery)
+library(openxlsx)
 # library(ComplexHeatmap)
 
 options(shiny.maxRequestSize = 1500 * 1024^2)

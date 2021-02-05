@@ -400,6 +400,15 @@ server <- function(input, output, session) {
     rownames_to_column(as.data.frame(res), input$metadataCellType)
   })
 
+  corToCall <- reactive({
+    res <- dataClustify()
+    cor_to_call(cor_mat = res, cluster_col = input$metadataCellType)
+  })
+  
+  output$corToCall <- DT::renderDataTable({
+    corToCall()
+  })
+  
   # Make plots such as heat maps to compare benchmarking with clustify with actual cell types
 
   output$hmap <- renderPlot({
@@ -448,10 +457,10 @@ server <- function(input, output, session) {
   )
   output$downloadClustify <- downloadHandler(
     filename = function() {
-      cat("clustify-", Sys.Date(), ".csv", sep = "")
+      cat("clustify-", Sys.Date(), ".xlsx", sep = "")
     },
     content = function(file) {
-      write.csv(clustifyDownload(), file, quote = FALSE)
+      write.xlsx(list(colToCall(), clustifyDownload()), file, quote = FALSE)
     }
   )
 

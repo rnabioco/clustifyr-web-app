@@ -204,6 +204,8 @@ ui <- dashboardPage(
         tags$hr(),
         DT::dataTableOutput("clustify", height = "300px"), # Clustify Matrix
         tags$hr(),
+        DT::dataTableOutput("corToCall", height = "300px"), 
+        tags$hr(),
         plotOutput("hmap", height = "600px")
       )
     )
