@@ -17,7 +17,7 @@ library(R.utils)
 library(DT)
 library(GEOquery)
 library(googlesheets4)
-# library(ComplexHeatmap)
+library(openxlsx)
 
 options(shiny.maxRequestSize = 1500 * 1024^2)
 options(repos = BiocManager::repositories())
