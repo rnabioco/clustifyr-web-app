@@ -98,6 +98,7 @@ server <- function(input, output, session) {
         w1$show()
         print(file)
       }
+<<<<<<< HEAD
       
       fileTypeFile1 <- tools::file_ext(file$datapath)
       req(file)
@@ -117,6 +118,18 @@ server <- function(input, output, session) {
         print("Step1")
         df1 <- fread(file$datapath)
       }
+=======
+    } else if (str_to_lower(fileTypeFile1) == "rdata" | str_to_lower(fileTypeFile1) == "rda") {
+      df1 <- load_rdata(file$datapath)
+      if (any(class(df1) %in% c("SingleCellExperiment", "Seurat"))) {
+        rv$obj <- df1
+        df1 <- object_data(df1, "data")
+      }
+    } else {
+      print("Step1")
+      df1 <- fread(file$datapath)
+    }
+>>>>>>> 979eba76fc70b487f1566022d978a0b6ab74c791
     } else if (!is.null(rv$obj)) {
       df1 <- object_data(rv$obj, "data")
     } else {
@@ -146,6 +159,7 @@ server <- function(input, output, session) {
         w2$show()
         print(file)
       }
+<<<<<<< HEAD
       
       fileTypeFile2 <- tools::file_ext(file$datapath)
       req(file)
@@ -163,6 +177,13 @@ server <- function(input, output, session) {
         }
       } else {
         df2 <- fread(file$datapath)
+=======
+    } else if (str_to_lower(fileTypeFile2) == "rdata" | str_to_lower(fileTypeFile2) == "rda") {
+      df2 <- load_rdata(file$datapath)
+      if (any(class(df2) %in% c("SingleCellExperiment", "Seurat"))) {
+        rv$obj <- df2
+        df2 <- object_data(rv$obj, "meta.data")
+>>>>>>> 979eba76fc70b487f1566022d978a0b6ab74c791
       }
     } else if (!is.null(rv$obj)) {
       df2 <- object_data(rv$obj, "meta.data")
@@ -674,7 +695,11 @@ server <- function(input, output, session) {
                      icon = icon("envelope-open-text")),
         actionButton("sheet", label = "Spot check for someta", 
                      icon = icon("feather-alt"))
+<<<<<<< HEAD
       )
+=======
+        )
+>>>>>>> 979eba76fc70b487f1566022d978a0b6ab74c791
     ))
   })
   
