@@ -47,22 +47,22 @@ ui <- dashboardPage(
                 border-left-color: green;
             }'
         ))),
-        
+
         # waiter stuff ----
         use_waiter(),
-        
+
         # load example data ----
         actionButton("example",
                      "load example data",
                      icon = icon("space-shuttle")
         ),
-        
+
         # Input: Checkbox if file has header ----
         checkboxInput("header", "Header", TRUE),
-        
+
         # Horizontal line ----
         tags$hr(),
-        
+
         # Input: Select separator ----
         radioButtons("sepMat", "Separator - Matrix",
                      choices = c(
@@ -72,7 +72,7 @@ ui <- dashboardPage(
                      ),
                      selected = ","
         ),
-        
+
         radioButtons("sepMeta", "Separator - Metadata",
                      choices = c(
                        Comma = ",",
@@ -81,7 +81,7 @@ ui <- dashboardPage(
                      ),
                      selected = ","
         ),
-        
+
         # Input: Select number of rows to display ----
         radioButtons("dispMat", "Display - Matrix",
                      choices = c(
@@ -115,12 +115,12 @@ ui <- dashboardPage(
                     ".rdata"
                   )
         ),
-        
+
         # GEO id load ----
-        actionButton("geo1", 
+        actionButton("geo1",
                      "from GEO id",
                      icon = icon("search")),
-        
+
         actionButton("matrixPopup", "Display UMI Matrix in popup"),
         DTOutput("contents1"), # UMI Count Matrix
         tags$hr()
@@ -141,18 +141,18 @@ ui <- dashboardPage(
                     ".rdata"
                   )
         ),
-        
+
         # GEO id load ----
-        actionButton("geo2", 
+        actionButton("geo2",
                      "from GEO id",
                      icon = icon("search")),
-        
+
         actionButton("metadataPopup", "Display Metadata table in popup"),
         fluidRow(column(12, DTOutput('contents2'))),
         #DT::dataTableOutput("contents2"), # Metadata table
         tags$hr(),
         uiOutput("colclicked"),
-        
+
         h2("Choose column in metadata with cluster information"),
         selectInput("metadataCellType", "Cell Type Metadata Column:",
                     choice = list("")
@@ -169,7 +169,7 @@ ui <- dashboardPage(
                       "ref_mouse_atlas"
                     )
         ),
-        actionButton("ref_linkgo", 
+        actionButton("ref_linkgo",
                      label = "Go to original source",
                      icon = icon("link")),
         tags$hr(),
@@ -201,14 +201,12 @@ ui <- dashboardPage(
         downloadButton("downloadReference", "Download reference matrix"),
         downloadButton("downloadClustify", "Download clustify matrix"),
         actionButton("uploadClustify", "Upload reference matrix"),
-        
+
         DT::dataTableOutput("reference", height = "300px"), # Reference Matrix
         tags$hr(),
         DT::dataTableOutput("clustify", height = "300px"), # Clustify Matrix
         tags$hr(),
-        DT::dataTableOutput("corToCall", height = "300px"), 
-        tags$hr(),
-        plotOutput("hmap", height = "600px")
+        plotOutput("hmap", height = "900px")
       )
     )
   )

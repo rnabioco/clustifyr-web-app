@@ -12,7 +12,7 @@ server <- function(input, output, session) {
   rv$ref_link <- NULL
   rv$res_visited <- 0
   rv$obj <- NULL
-  
+
   # waiter checkpoints
   w1 <- Waiter$new(
     id = "contents1",
@@ -58,21 +58,21 @@ server <- function(input, output, session) {
       h4("")
     )
   )
-  
+
   w6 <- Waiter$new(id = "modalgeo",
                    html = tagList(
                      spin_flower(),
                      h4("Info fetching..."),
                      h4("")
                    ))
-  
+
   w7 <- Waiter$new(id = "modalfiles",
                    html = tagList(
                      spin_flower(),
                      h4("File previewing..."),
                      h4("")
                    ))
-  
+
   w8 <- Waiter$new(
     id = "contents3",
     html = tagList(
@@ -81,19 +81,19 @@ server <- function(input, output, session) {
       h4("")
     )
   )
-  
+
   data1 <- reactive({
     
     # input$file1 will be NULL initially. After the user selects
     # and uploads a file, head of that data file by default,
     # or all rows if selected, will be shown.
-    
+
     if (!is.null(input$file1) | !is.null(rv$matrixloc)) {
       if (!is.null(input$file1)) {
         rv$matrixloc <- input$file1
       }
       file <- rv$matrixloc
-      
+
       if (!is.null(file)) {
         w1$show()
         print(file)
@@ -122,7 +122,6 @@ server <- function(input, output, session) {
     } else {
       return(NULL)
     }
-    
     print("step2")
     df1 <- df1 %>% as.data.frame()
     print("step3")
@@ -169,13 +168,13 @@ server <- function(input, output, session) {
     } else {
       return(NULL)
     }
-    
+
     df2 <- df2 %>% as.data.frame()
     if (!has_rownames(df2)) {
       rownames(df2) <- df2[, 1]
       df2[, 1] <- NULL
     }
-    
+
     w2$hide()
     df2
   })
@@ -188,40 +187,40 @@ server <- function(input, output, session) {
       return(NULL)
     }
     file <- rv$ref
-    
+
     if (!is.null(file)) {
       w8$show()
       print(file)
     }
-    
+
     fileTypeFile3 <- tools::file_ext(file$datapath)
     req(file)
-    
+
     if (str_to_lower(fileTypeFile3) == "rds") {
       df3 <- readRDS(file$datapath) %>% as.data.frame()
     } else if (str_to_lower(fileTypeFile3) == "rdata" | str_to_lower(fileTypeFile3) == "rda") {
       df3 <- load_rdata(file$datapath) %>% as.data.frame()
     } else {
-      df3 <- fread(file$datapath) %>% # , header = input$header, sep = input$sepMat) %>% 
+      df3 <- fread(file$datapath) %>% # , header = input$header, sep = input$sepMat) %>%
         as.data.frame()
     }
-    
+
     if (!has_rownames(df3)) {
       rownames(df3) <- df3[, 1]
       df3[, 1] <- NULL
     }
-    
+
     w8$hide()
     df3
   })
-  
+
   output$contents1 <- DT::renderDataTable({
     if (is.null(rv$matrixloc) & is.null(rv$obj)) {
       return(df1 <- data.frame(`nodata` = rep("", 6)))
     } else {
       df1 <- data1()
     }
-    
+
     # file 1
     if (input$dispMat == "head") {
       cols <- ncol(df1)
@@ -244,7 +243,7 @@ server <- function(input, output, session) {
                       choices = c("", colnames(df2)),
                       selected = ""
     )
-    
+
     # file 2
     if (input$dispMeta == "head") {
       return(head(df2))
@@ -252,11 +251,11 @@ server <- function(input, output, session) {
     else {
       return(df2)
     }
-    
-  }, 
-  callback = DT::JS(js), 
+
+  },
+  callback = DT::JS(js),
   selection = list(target = 'column', mode = "single"))
-  
+
   output$colclicked <- renderUI({
     if (is.null(input[["column_clicked"]])) {
       "please select cluster column in drop-down menu, or click in the table"
@@ -264,29 +263,29 @@ server <- function(input, output, session) {
       input$metadataCellType
     }
   })
-  
+
   observeEvent(input[["column_clicked"]], {
     updateSelectInput(session, "metadataCellType", 
                       selected = input[["column_clicked"]]                   
     )
   })
-  
+
   output$ref_summary <- renderUI({
     HTML(paste0("cell types: ", ncol(data3()),
                 "<br>",
                 "genes: ", nrow(data3())))
   })
-  
+
   data3b <- reactive({
     w8$show()
     rv$ref <- "built-in"
     ref <- refs[[ref_dict[input$dataHubReference]]]
     rv$ref_link <- refs_meta[ref_dict[input$dataHubReference], ] %>% pull(sourceurl)
     w8$show()
-    
+
     ref
   })
-  
+
   data3 <- reactive({
     b <- data3b()
     a <- data3a()
@@ -299,10 +298,10 @@ server <- function(input, output, session) {
     }
     df3
   })
-  
+
   output$contents3 <- DT::renderDataTable({
     df3 <- data3()
-    
+
     # file 3
     if (input$dispMat == "head") {
       return(head(df3))
@@ -333,7 +332,7 @@ server <- function(input, output, session) {
       easyClose = TRUE
     ))
   })
-  
+
   data_avg <- reactive({
     if (input$metadataCellType == "") {
       return(NULL)
@@ -366,7 +365,7 @@ server <- function(input, output, session) {
     } else {
       message("Using variable genes in object")
     }
-    
+
     metadataCol <- data2()[[input$metadataCellType]]
     # use for classification of cell types
     messages <<- capture.output(
@@ -384,7 +383,7 @@ server <- function(input, output, session) {
     w4$hide()
     res
   })
-  
+
   output$reference <- DT::renderDataTable({
     if (rv$res_visited == 1) {
       message("empty")
@@ -418,7 +417,7 @@ server <- function(input, output, session) {
     if (input$metadataCellType == "") {
       return(NULL)
     }
-    
+
     # could expose as an option
     cutoff_to_display <- 0.5
     tmp_mat <<- dataClustify()
@@ -427,19 +426,7 @@ server <- function(input, output, session) {
       w5$show()
     }
     tmp_mat <- tmp_mat[, colSums(tmp_mat > 0.5) > 1]
-    s <- dim(tmp_mat)
-    # figuring out how best to plot width and height based on input matrix size needs work
-    # this is pretty ugly currently
-    w <- unit(8 + (s[2] / 30), "inch")
-    h <- unit(8 + (s[1] / 30), "inch")
-    fs <- min(12, c(12:6)[findInterval(s[2], seq(6, 200, length.out = 7))])
-    
-    hmap <- plot_cor_heatmap(tmp_mat, width = w)
-    
-    ComplexHeatmap::draw(hmap,
-                         height = h,
-                         heatmap_column_names_gp = gpar(fontsize = fs)
-    )
+    plot_hmap(tmp_mat)
   })
   
   referenceDownload <- reactive({
@@ -477,11 +464,11 @@ server <- function(input, output, session) {
       updateTabItems(session, "tabs", "metadataLoad")
     }
   )
-  
+
   output$clustifym <- renderUI(
     HTML(paste0(c(rv$clustifym, ""), collapse = "<br/><br/>"))
   )
-  
+
   # modal for GEO id
   observeEvent(
     input$geo1 | input$geo2,
@@ -496,7 +483,7 @@ server <- function(input, output, session) {
     )),
     ignoreInit = T
   )
-  
+
   observeEvent(
     input$geogo,
     {
@@ -505,12 +492,12 @@ server <- function(input, output, session) {
       rv$links <- list_geo(rv$lastgeo)
       print(rv$links)
       links2 <- cbind(rv$links %>% mutate(size = map(link, get_file_size)) %>% select(-link),
-                      button = sapply(1:nrow(rv$links), make_button("tbl1")), 
-                      stringsAsFactors = FALSE) %>% 
+                      button = sapply(1:nrow(rv$links), make_button("tbl1")),
+                      stringsAsFactors = FALSE) %>%
         data.table::data.table()
-      links2 <- links2 %>% 
+      links2 <- links2 %>%
         DT::datatable(options = list(
-          dom = "ftp", 
+          dom = "ftp",
           searchHighlight = TRUE,
           paging = TRUE,
           pageLength = 5,
@@ -531,7 +518,7 @@ server <- function(input, output, session) {
                                         url,
                                         '", "_blank")'),
                        icon = icon("link")),
-          actionButton("email", label = "Email author for missing data", 
+          actionButton("email", label = "Email author for missing data",
                        onclick = paste0('location.href="',
                                         prep_email(rv$lastgeo),
                                         '"'),
@@ -542,7 +529,7 @@ server <- function(input, output, session) {
       ))
     }
   )
-  
+
   observeEvent(input[["button"]], {
     print("button")
     w7$show()
@@ -551,7 +538,7 @@ server <- function(input, output, session) {
     row <- splitID[3]
     rv$loadinglink <<- rv$links$link[as.numeric(row)]
     print(rv$links)
-    
+
     # if tar, read a file list
     if (str_detect(rv$links$link[as.numeric(row)], "/GSE[0-9]+_RAW.tar")) {
       fullb <- F
@@ -560,7 +547,7 @@ server <- function(input, output, session) {
       fullb <- T
       previewdata <- preview_link(rv$links$link[as.numeric(row)])
     }
-    
+
     if (is.null(previewdata)) {
       fullb <- F
       previewdata <- data.frame(unreadable = rep("", 4))
@@ -568,7 +555,7 @@ server <- function(input, output, session) {
       cols <- ncol(previewdata)
       previewdata <-previewdata[, 1:min(cols, 5)]
     }
-    
+
     w7$hide()
     showModal(modalDialog(
       size = "l",
@@ -587,7 +574,7 @@ server <- function(input, output, session) {
       footer = NULL
     ))
   })
-  
+
   observeEvent(input$full, {
     print(rv$loadinglink)
     if (input[["activeTab"]] == "matrixLoad") {
@@ -642,12 +629,12 @@ server <- function(input, output, session) {
   })
   observeEvent(input$back, {
     links2 <- cbind(rv$links %>% mutate(size = map(link, get_file_size)) %>% select(-link),
-                    button = sapply(1:nrow(rv$links), make_button("tbl1")), 
-                    stringsAsFactors = FALSE) %>% 
-      data.table::data.table() 
-    links2 <- links2 %>% 
+                    button = sapply(1:nrow(rv$links), make_button("tbl1")),
+                    stringsAsFactors = FALSE) %>%
+      data.table::data.table()
+    links2 <- links2 %>%
       DT::datatable(options = list(
-        dom = "ftp", 
+        dom = "ftp",
         searchHighlight = TRUE,
         paging = TRUE,
         pageLength = 5,
@@ -667,7 +654,7 @@ server <- function(input, output, session) {
                                       url,
                                       '", "_blank")'),
                      icon = icon("link")),
-        actionButton("email", label = "Email author for missing data", 
+        actionButton("email", label = "Email author for missing data",
                      onclick = paste0('location.href="',
                                       prep_email(rv$lastgeo),
                                       '"'),
@@ -696,14 +683,14 @@ server <- function(input, output, session) {
       footer = NULL
     ))
   })
-  
+
   # disable menu at load
   addCssClass(selector = "a[data-value='clustifyres']", class = "inactiveLink")
   addCssClass(selector = "ul li:eq(4)", class = "inactiveLink")
-  
+
   # check if data is loaded
-  observeEvent((!is.null(data1())) + (!is.null(data2())) + (!is.null(data3())) + 
-                 (!is.null(input$metadataCellType)) + 
+  observeEvent((!is.null(data1())) + (!is.null(data2())) + (!is.null(data3())) +
+                 (!is.null(input$metadataCellType)) +
                  (input$metadataCellType != ""), {
                    if ((!is.null(data1())) + (!is.null(data2())) + (!is.null(data3())) + 
                        (!is.null(input$metadataCellType)) + 
@@ -712,21 +699,20 @@ server <- function(input, output, session) {
                      removeClass(selector = "ul li:eq(4)", class = "inactiveLink")
                    }
                  })
-  
   observeEvent(data1(), {
     if (!is.null(data1())) {
       addCssClass(selector = "a[data-value='matrixLoad']", class = "doneLink")
       addClass(selector = "ul li:eq(1)", class = "doneLink")
     }
   })
-  
+
   observeEvent(input$metadataCellType, {
     if (input$metadataCellType != "") {
       addCssClass(selector = "a[data-value='metadataLoad']", class = "doneLink")
       addClass(selector = "ul li:eq(2)", class = "doneLink")
     }
   })
-  
+
   observeEvent(input[["activeTab"]], {
     if (input[["activeTab"]] == "clusterRef") {
       rv$ref_visited <<- 1
@@ -735,23 +721,23 @@ server <- function(input, output, session) {
         rv$res_visited <<- 1
     }
   })
-  
+
   observeEvent(rv$ref_visited, {
     if (rv$ref_visited == 1 & !is.null(data3())) {
       addCssClass(selector = "a[data-value='clusterRef']", class = "doneLink")
-      addClass(selector = "ul li:eq(3)", class = "doneLink")      
+      addClass(selector = "ul li:eq(3)", class = "doneLink")
     }
   })
-  
+
   observeEvent(rv$res_visited, {
     if (rv$res_visited == 1) {
       print("change")
       rv$res_visited <- 2
     }
   }, ignoreInit = FALSE)
-  
+
   observeEvent(rv$ref_link, {
-    runjs(paste0("document.getElementById('ref_linkgo').onclick = function() { 
+    runjs(paste0("document.getElementById('ref_linkgo').onclick = function() {
            window.open('", rv$ref_link, "', '_blank');};"))
   })
 }
