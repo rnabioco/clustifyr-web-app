@@ -22,7 +22,7 @@ server <- function(input, output, session) {
       h4("")
     )
   )
-
+  
   w2 <- Waiter$new(
     id = "contents2",
     html = tagList(
@@ -31,7 +31,7 @@ server <- function(input, output, session) {
       h4("")
     )
   )
-
+  
   w3 <- Waiter$new(
     id = "reference",
     html = tagList(
@@ -40,7 +40,7 @@ server <- function(input, output, session) {
       h4("")
     )
   )
-
+  
   w4 <- Waiter$new(
     id = "clustify",
     html = tagList(
@@ -49,7 +49,7 @@ server <- function(input, output, session) {
       h4("")
     )
   )
-
+  
   w5 <- Waiter$new(
     id = "hmap",
     html = tagList(
@@ -83,7 +83,7 @@ server <- function(input, output, session) {
   )
 
   data1 <- reactive({
-
+    
     # input$file1 will be NULL initially. After the user selects
     # and uploads a file, head of that data file by default,
     # or all rows if selected, will be shown.
@@ -94,73 +94,75 @@ server <- function(input, output, session) {
       }
       file <- rv$matrixloc
 
-    if (!is.null(file)) {
-      w1$show()
-      print(file)
-    }
-
-    fileTypeFile1 <- tools::file_ext(file$datapath)
-    req(file)
-    if (str_to_lower(fileTypeFile1) == "rds") {
-      df1 <- readRDS(file$datapath)
-      if (any(class(df1) %in% c("SingleCellExperiment", "Seurat"))) {
-        rv$obj <- df1
-        df1 <- object_data(rv$obj, "data")
+      if (!is.null(file)) {
+        w1$show()
+        print(file)
       }
-    } else if (str_to_lower(fileTypeFile1) == "rdata") {
-      df1 <- load_rdata(file$datapath)
-      if (any(class(df1) %in% c("SingleCellExperiment", "Seurat"))) {
-        rv$obj <- df1
-        df1 <- object_data(df1, "data")
+      
+      fileTypeFile1 <- tools::file_ext(file$datapath)
+      req(file)
+      if (str_to_lower(fileTypeFile1) == "rds") {
+        df1 <- readRDS(file$datapath) 
+        if (any(class(df1) %in% c("SingleCellExperiment", "Seurat"))) {
+          rv$obj <- df1
+          df1 <- object_data(rv$obj, "data")
+        }
+      } else if (str_to_lower(fileTypeFile1) == "rdata" | str_to_lower(fileTypeFile1) == "rda") {
+        df1 <- load_rdata(file$datapath)
+        if (any(class(df1) %in% c("SingleCellExperiment", "Seurat"))) {
+          rv$obj <- df1
+          df1 <- object_data(df1, "data")
+        }
+      } else {
+        print("Step1")
+        df1 <- fread(file$datapath)
       }
-    } else {
-      df1 <- fread(file$datapath)
-    }
     } else if (!is.null(rv$obj)) {
       df1 <- object_data(rv$obj, "data")
     } else {
       return(NULL)
     }
-
+    print("step2")
     df1 <- df1 %>% as.data.frame()
+    print("step3")
     if (!has_rownames(df1)) {
-        rownames(df1) <- df1[, 1]
-        df1[, 1] <- NULL
+      rownames(df1) <- df1[, 1]
+      df1[, 1] <- NULL
     }
-
+    
     w1$hide()
     df1
   })
-
+  
   data2 <- reactive({
     if (!is.null(input$file2) | !is.null(rv$metaloc)) {
       if (!is.null(input$file2)) {
         rv$metaloc <- input$file2
       }
       file <- rv$metaloc
-
-    if (!is.null(file)) {
-      w2$show()
-      print(file)
-    }
-
-    fileTypeFile2 <- tools::file_ext(file$datapath)
-    req(file)
-    if (str_to_lower(fileTypeFile2) == "rds") {
-      df2 <- readRDS(file$datapath)
-      if (any(class(df2) %in% c("SingleCellExperiment", "Seurat"))) {
-        rv$obj <- df2
-        df2 <- object_data(df2, "meta.data")
+      
+      if (!is.null(file)) {
+        w2$show()
+        print(file)
       }
-    } else if (str_to_lower(fileTypeFile2) == "rdata") {
-      df2 <- load_rdata(file$datapath)
-      if (any(class(df2) %in% c("SingleCellExperiment", "Seurat"))) {
-        rv$obj <- df2
-        df2 <- object_data(rv$obj, "meta.data")
+      
+      fileTypeFile2 <- tools::file_ext(file$datapath)
+      req(file)
+      if (str_to_lower(fileTypeFile2) == "rds") {
+        df2 <- readRDS(file$datapath)
+        if (any(class(df2) %in% c("SingleCellExperiment", "Seurat"))) {
+          rv$obj <- df2
+          df2 <- object_data(df2, "meta.data")
+        }
+      } else if (str_to_lower(fileTypeFile2) == "rdata" | str_to_lower(fileTypeFile2) == "rda") {
+        df2 <- load_rdata(file$datapath)
+        if (any(class(df2) %in% c("SingleCellExperiment", "Seurat"))) {
+          rv$obj <- df2
+          df2 <- object_data(rv$obj, "meta.data")
+        }
+      } else {
+        df2 <- fread(file$datapath)
       }
-    } else {
-      df2 <- fread(file$datapath)
-    }
     } else if (!is.null(rv$obj)) {
       df2 <- object_data(rv$obj, "meta.data")
     } else {
@@ -176,7 +178,7 @@ server <- function(input, output, session) {
     w2$hide()
     df2
   })
-
+  
   data3a <- reactive({
     if (!is.null(input$file3)) {
       rv$ref <- input$file3
@@ -196,7 +198,7 @@ server <- function(input, output, session) {
 
     if (str_to_lower(fileTypeFile3) == "rds") {
       df3 <- readRDS(file$datapath) %>% as.data.frame()
-    } else if (str_to_lower(fileTypeFile3) == "rdata") {
+    } else if (str_to_lower(fileTypeFile3) == "rdata" | str_to_lower(fileTypeFile3) == "rda") {
       df3 <- load_rdata(file$datapath) %>% as.data.frame()
     } else {
       df3 <- fread(file$datapath) %>% # , header = input$header, sep = input$sepMat) %>%
@@ -229,14 +231,14 @@ server <- function(input, output, session) {
       return(df1)
     }
   })
-
+  
   output$contents2 <- DT::renderDataTable({
     if (is.null(rv$metaloc) & is.null(rv$obj)) {
       return(df2 <- data.frame(`nodata` = rep("", 6)))
     } else {
       df2 <- data2()
     }
-
+    
     updateSelectInput(session, "metadataCellType",
                       choices = c("", colnames(df2)),
                       selected = ""
@@ -263,15 +265,15 @@ server <- function(input, output, session) {
   })
 
   observeEvent(input[["column_clicked"]], {
-    updateSelectInput(session, "metadataCellType",
-      selected = input[["column_clicked"]]
+    updateSelectInput(session, "metadataCellType", 
+                      selected = input[["column_clicked"]]                   
     )
   })
 
   output$ref_summary <- renderUI({
     HTML(paste0("cell types: ", ncol(data3()),
-           "<br>",
-           "genes: ", nrow(data3())))
+                "<br>",
+                "genes: ", nrow(data3())))
   })
 
   data3b <- reactive({
@@ -308,7 +310,7 @@ server <- function(input, output, session) {
       return(df3)
     }
   })
-
+  
   observeEvent(input$matrixPopup, {
     showModal(modalDialog(
       tags$caption("Matrix table"),
@@ -319,7 +321,7 @@ server <- function(input, output, session) {
       easyClose = TRUE
     ))
   })
-
+  
   observeEvent(input$metadataPopup, {
     showModal(modalDialog(
       tags$caption("Metadata table"),
@@ -340,14 +342,14 @@ server <- function(input, output, session) {
     w3$hide()
     reference_matrix
   })
-
+  
   dataClustify <- reactive({
     if (input$metadataCellType == "") {
       return(NULL)
     }
     w4$show()
     benchmarkRef <- data3()
-
+    
     if (!is.null(rv$obj)) {
       message("Single cell object detected")
       matrixSeuratObject <- rv$obj
@@ -373,11 +375,11 @@ server <- function(input, output, session) {
         ref_mat = benchmarkRef,
         query_genes = VariableFeatures(matrixSeuratObject),
         verbose = TRUE
-        ),
+      ),
       type = "message"
     )
     rv$clustifym <<- messages
-
+    
     w4$hide()
     res
   })
@@ -390,7 +392,7 @@ server <- function(input, output, session) {
     reference_matrix <- data_avg()
     rownames_to_column(as.data.frame(reference_matrix), input$metadataCellType)
   })
-
+  
   output$clustify <- DT::renderDataTable({
     if (rv$res_visited == 1) {
       message("empty2")
@@ -399,9 +401,18 @@ server <- function(input, output, session) {
     res <- dataClustify()
     rownames_to_column(as.data.frame(res), input$metadataCellType)
   })
-
+  
+  corToCall <- reactive({
+    res <- dataClustify()
+    cor_to_call(cor_mat = res, cluster_col = input$metadataCellType)
+  })
+  
+  output$corToCall <- DT::renderDataTable({
+    corToCall()
+  })
+  
   # Make plots such as heat maps to compare benchmarking with clustify with actual cell types
-
+  
   output$hmap <- renderPlot({
     if (input$metadataCellType == "") {
       return(NULL)
@@ -410,22 +421,22 @@ server <- function(input, output, session) {
     # could expose as an option
     cutoff_to_display <- 0.5
     tmp_mat <<- dataClustify()
-
+    
     if (!is.null(tmp_mat)) {
       w5$show()
     }
     tmp_mat <- tmp_mat[, colSums(tmp_mat > 0.5) > 1]
     plot_hmap(tmp_mat)
   })
-
+  
   referenceDownload <- reactive({
     avgMatrix <- data_avg()
   })
-
+  
   clustifyDownload <- reactive({
     clustifyMatrix <- dataClustify()
   })
-
+  
   output$downloadReference <- downloadHandler(
     filename = function() {
       paste("reference-", Sys.Date(), ".csv", sep = "")
@@ -436,13 +447,13 @@ server <- function(input, output, session) {
   )
   output$downloadClustify <- downloadHandler(
     filename = function() {
-      cat("clustify-", Sys.Date(), ".csv", sep = "")
+      paste("clustify-", Sys.Date(), ".xlsx", sep = "")
     },
     content = function(file) {
-      write.csv(clustifyDownload(), file, quote = FALSE)
+      write.xlsx(list(corToCall(), clustifyDownload()), file, quote = FALSE, rowNames = TRUE)
     }
   )
-
+  
   # load example data
   observeEvent(
     input$example,
@@ -511,7 +522,10 @@ server <- function(input, output, session) {
                        onclick = paste0('location.href="',
                                         prep_email(rv$lastgeo),
                                         '"'),
-                       icon = icon("envelope-open-text")))
+                       icon = icon("envelope-open-text")),
+          actionButton("sheet", label = "Spot check for someta", 
+                       icon = icon("feather-alt"))
+        )
       ))
     }
   )
@@ -571,7 +585,48 @@ server <- function(input, output, session) {
     print(rv$loadinglink)
     removeModal()
   })
-
+  
+  observeEvent(input$sheet, {
+    showModal(modalDialog(
+      size = "l",
+      div(id = "modalsheet",
+          title = "Please fill out",
+          renderUI(h2(rv$lastgeo)),
+          hr(),
+          strong(materialSwitch(
+            "issc",
+            "is single cell data",
+            value = TRUE,
+            status = "success",
+            right = TRUE,
+            inline = FALSE,
+            width = NULL
+          )),
+          strong(materialSwitch(
+            "hasmeta",
+            "has metadata",
+            value = TRUE,
+            status = "success",
+            right = TRUE,
+            inline = FALSE,
+            width = NULL
+          )),
+          strong(materialSwitch(
+            "hascellcol",
+            "has cell type column in metadata",
+            value = TRUE,
+            status = "success",
+            right = TRUE,
+            inline = FALSE,
+            width = NULL
+          )),
+          textInput("comment", "", placeholder = "Additional comments")
+      ),
+      easyClose = TRUE,
+      fade = FALSE,
+      footer = actionButton("submit", "Submit", icon = icon("feather-alt"))
+    ))
+  })
   observeEvent(input$back, {
     links2 <- cbind(rv$links %>% mutate(size = map(link, get_file_size)) %>% select(-link),
                     button = sapply(1:nrow(rv$links), make_button("tbl1")),
@@ -603,7 +658,29 @@ server <- function(input, output, session) {
                      onclick = paste0('location.href="',
                                       prep_email(rv$lastgeo),
                                       '"'),
-                     icon = icon("envelope-open-text")))
+                     icon = icon("envelope-open-text")),
+        actionButton("sheet", label = "Spot check for someta", 
+                     icon = icon("feather-alt"))
+      )
+    ))
+  })
+  
+  # upload to google sheet
+  observeEvent(input$submit, {
+    sheet_append(sheetid, data.frame(id = rv$lastgeo,
+                                     issc = input$issc,
+                                     hasmeta = input$hasmeta,
+                                     hascellcol = input$hascellcol,
+                                     comment = input$comment))
+    print(read_sheet(sheetid, 1))
+    
+    showModal(modalDialog(
+      div(id = "modaldone",
+          h2("Results uploaded, thank you!")
+      ),
+      easyClose = TRUE,
+      fade = FALSE,
+      footer = NULL
     ))
   })
 
@@ -615,14 +692,13 @@ server <- function(input, output, session) {
   observeEvent((!is.null(data1())) + (!is.null(data2())) + (!is.null(data3())) +
                  (!is.null(input$metadataCellType)) +
                  (input$metadataCellType != ""), {
-    if ((!is.null(data1())) + (!is.null(data2())) + (!is.null(data3())) +
-        (!is.null(input$metadataCellType)) +
-        (input$metadataCellType != "") == 5) {
-      removeCssClass(selector = "a[data-value='clustifyres']", class = "inactiveLink")
-      removeClass(selector = "ul li:eq(4)", class = "inactiveLink")
-    }
-  })
-
+                   if ((!is.null(data1())) + (!is.null(data2())) + (!is.null(data3())) + 
+                       (!is.null(input$metadataCellType)) + 
+                       (input$metadataCellType != "") == 5) {
+                     removeCssClass(selector = "a[data-value='clustifyres']", class = "inactiveLink")
+                     removeClass(selector = "ul li:eq(4)", class = "inactiveLink")
+                   }
+                 })
   observeEvent(data1(), {
     if (!is.null(data1())) {
       addCssClass(selector = "a[data-value='matrixLoad']", class = "doneLink")
@@ -642,7 +718,7 @@ server <- function(input, output, session) {
       rv$ref_visited <<- 1
     } else if (input[["activeTab"]] == "clustifyres") {
       if (rv$res_visited == 0)
-      rv$res_visited <<- 1
+        rv$res_visited <<- 1
     }
   })
 
