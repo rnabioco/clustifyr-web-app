@@ -96,7 +96,7 @@ server <- function(input, output, session) {
 
       if (!is.null(file)) {
         w1$show()
-        print(file)
+        message(file)
       }
       
       fileTypeFile1 <- tools::file_ext(file$datapath)
@@ -114,7 +114,6 @@ server <- function(input, output, session) {
           df1 <- object_data(df1, "data")
         }
       } else {
-        print("Step1")
         df1 <- fread(file$datapath)
       }
     } else if (!is.null(rv$obj)) {
@@ -122,9 +121,18 @@ server <- function(input, output, session) {
     } else {
       return(NULL)
     }
-    print("step2")
+    
+    if ((!is_local) & (object.size(df1) > 3e9)) {
+      message("Potential memory issue due to file size")
+      showModal(modalDialog(
+        h2("File size over 3Gb, online version may be unstable"),
+        easyClose = TRUE,
+        fade = FALSE,
+        footer = NULL
+      ))
+    }
+    
     df1 <- df1 %>% as.data.frame()
-    print("step3")
     if (!has_rownames(df1)) {
       rownames(df1) <- df1[, 1]
       df1[, 1] <- NULL
@@ -143,7 +151,7 @@ server <- function(input, output, session) {
       
       if (!is.null(file)) {
         w2$show()
-        print(file)
+        message(file)
       }
       
       fileTypeFile2 <- tools::file_ext(file$datapath)
@@ -169,6 +177,16 @@ server <- function(input, output, session) {
       return(NULL)
     }
 
+    if ((!is_local) & (object.size(df2) > 3e9)) {
+      message("Potential memory issue due to file size")
+      showModal(modalDialog(
+        h2("File size over 3Gb, online version may be unstable"),
+        easyClose = TRUE,
+        fade = FALSE,
+        footer = NULL
+      ))
+    }
+    
     df2 <- df2 %>% as.data.frame()
     if (!has_rownames(df2)) {
       rownames(df2) <- df2[, 1]
@@ -190,7 +208,7 @@ server <- function(input, output, session) {
 
     if (!is.null(file)) {
       w8$show()
-      print(file)
+      message(file)
     }
 
     fileTypeFile3 <- tools::file_ext(file$datapath)
@@ -205,6 +223,16 @@ server <- function(input, output, session) {
         as.data.frame()
     }
 
+    if ((!is_local) & (object.size(df3) > 3e9)) {
+      message("Potential memory issue due to file size")
+      showModal(modalDialog(
+        h2("File size over 3Gb, online version may be unstable"),
+        easyClose = TRUE,
+        fade = FALSE,
+        footer = NULL
+      ))
+    }
+    
     if (!has_rownames(df3)) {
       rownames(df3) <- df3[, 1]
       df3[, 1] <- NULL
@@ -386,7 +414,6 @@ server <- function(input, output, session) {
 
   output$reference <- DT::renderDataTable({
     if (rv$res_visited == 1) {
-      message("empty")
       return(df1 <- data.frame(`nodata` = rep("", 6)))
     }
     reference_matrix <- data_avg()
@@ -395,7 +422,6 @@ server <- function(input, output, session) {
   
   output$clustify <- DT::renderDataTable({
     if (rv$res_visited == 1) {
-      message("empty2")
       return(df1 <- data.frame(`nodata` = rep("", 6)))
     }
     res <- dataClustify()
@@ -420,8 +446,7 @@ server <- function(input, output, session) {
 
     # could expose as an option
     cutoff_to_display <- 0.5
-    tmp_mat <<- dataClustify()
-    
+
     if (!is.null(tmp_mat)) {
       w5$show()
     }
@@ -490,7 +515,7 @@ server <- function(input, output, session) {
       w6$show()
       rv$lastgeo <- input$geoid
       rv$links <- list_geo(rv$lastgeo)
-      print(rv$links)
+      message(rv$links)
       links2 <- cbind(rv$links %>% mutate(size = map(link, get_file_size)) %>% select(-link),
                       button = sapply(1:nrow(rv$links), make_button("tbl1")),
                       stringsAsFactors = FALSE) %>%
@@ -531,13 +556,11 @@ server <- function(input, output, session) {
   )
 
   observeEvent(input[["button"]], {
-    print("button")
     w7$show()
     splitID <- strsplit(input[["button"]], "_")[[1]]
     tbl <- splitID[2]
     row <- splitID[3]
     rv$loadinglink <<- rv$links$link[as.numeric(row)]
-    print(rv$links)
 
     # if tar, read a file list
     if (str_detect(rv$links$link[as.numeric(row)], "/GSE[0-9]+_RAW.tar")) {
@@ -553,7 +576,7 @@ server <- function(input, output, session) {
       previewdata <- data.frame(unreadable = rep("", 4))
     } else {
       cols <- ncol(previewdata)
-      previewdata <-previewdata[, 1:min(cols, 5)]
+      previewdata <- previewdata[, 1:min(cols, 100)]
     }
 
     w7$hide()
@@ -576,13 +599,12 @@ server <- function(input, output, session) {
   })
 
   observeEvent(input$full, {
-    print(rv$loadinglink)
+    message(rv$loadinglink)
     if (input[["activeTab"]] == "matrixLoad") {
       rv$matrixloc <- list(datapath = rv$loadinglink)
     } else {
       rv$metaloc <- list(datapath = rv$loadinglink)
     }
-    print(rv$loadinglink)
     removeModal()
   })
   
@@ -672,7 +694,7 @@ server <- function(input, output, session) {
                                      hasmeta = input$hasmeta,
                                      hascellcol = input$hascellcol,
                                      comment = input$comment))
-    print(read_sheet(sheetid, 1))
+    # print(read_sheet(sheetid, 1))
     
     showModal(modalDialog(
       div(id = "modaldone",
@@ -731,7 +753,6 @@ server <- function(input, output, session) {
 
   observeEvent(rv$res_visited, {
     if (rv$res_visited == 1) {
-      print("change")
       rv$res_visited <- 2
     }
   }, ignoreInit = FALSE)

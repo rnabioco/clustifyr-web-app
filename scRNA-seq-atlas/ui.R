@@ -1,6 +1,6 @@
 # Define UI for data upload app ----
 ui <- dashboardPage(
-  dashboardHeader(title = "Clustifyr RShiny App"),
+  dashboardHeader(title = "clustifyr RShiny app"),
   dashboardSidebar(
     sidebarMenu(
       id = "tabs",
@@ -186,7 +186,7 @@ ui <- dashboardPage(
                     ".rda"
                   )
         ),
-        DTOutput("contents3"),
+        DTOutput("contents3", height = "300px"),
         uiOutput("ref_summary")
       ),
       tabItem(
@@ -201,10 +201,14 @@ ui <- dashboardPage(
         downloadButton("downloadReference", "Download reference matrix"),
         downloadButton("downloadClustify", "Download clustify matrix"),
         actionButton("uploadClustify", "Upload reference matrix"),
-
+        h2("average matrix"),
         DT::dataTableOutput("reference", height = "300px"), # Reference Matrix
         tags$hr(),
+        h2("ranked correlation matrix"), 
         DT::dataTableOutput("clustify", height = "300px"), # Clustify Matrix
+        tags$hr(),
+        h2("cell type results"),
+        DT::dataTableOutput("corToCall", height = "300px"),
         tags$hr(),
         plotOutput("hmap", height = "900px")
       )

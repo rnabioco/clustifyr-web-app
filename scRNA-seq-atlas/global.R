@@ -22,6 +22,7 @@ library(openxlsx)
 
 options(shiny.maxRequestSize = 1500 * 1024^2)
 options(repos = BiocManager::repositories())
+options(datatable.fread.datatable = FALSE)
 options(shiny.reactlog = TRUE)
 options(
   DT.options = list(
@@ -31,6 +32,8 @@ options(
     scrollX = TRUE
   )
 )
+
+is_local <- Sys.getenv('SHINY_PORT') == ""
 
 # google sheet
 gs4_auth(cache = ".sheet", email = TRUE, use_oob = TRUE)
