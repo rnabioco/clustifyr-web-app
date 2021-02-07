@@ -11,6 +11,7 @@ library(rsconnect)
 library(ExperimentHub)
 library(Seurat)
 library(shinydashboard)
+#library(dashboardthemes)
 library(tidyverse)
 library(data.table)
 library(R.utils)
@@ -83,7 +84,11 @@ get_tar <- function(link) {
 
 get_file_size <- function(url) {
   response <- httr::HEAD(url)
-  size <- httr::headers(response)[["Content-Length"]] %>% as.numeric()
+  size <- tryCatch(httr::headers(response)[["Content-Length"]] %>% as.numeric(),
+                   error = "error_get")
+  if (is.null(size)) {
+    return("error_get")
+  }
   utils:::format.object_size(size, "auto")
 }
 
@@ -96,8 +101,15 @@ list_geo <- function(id) {
                   error = function(e) {
                     "error_get"
                   })
-
   # make links
+  if (is.null(out)) {
+    return("error_get")
+  } 
+  
+  if (out == "error_get") {
+    return("error_get")
+  }
+
   out <- data.frame(file = out) %>%
     mutate(link = str_c("https://ftp.ncbi.nlm.nih.gov/geo/series/GSE",
                         str_extract(file, "[0-9]{3}"),
@@ -105,7 +117,6 @@ list_geo <- function(id) {
                         id,
                         "/suppl/",
                         file))
-
   out
 }
 
@@ -170,7 +181,7 @@ preview_link <- function(link, n_row = 5, n_col = 50, verbose = T) {
 
   # parsing, using fread auto
   temp_df <- tryCatch(data.table::fread(text = temp),#, header = TRUE, fill = TRUE),
-                      error = function() {"paring failed"})
+                      error = function() {"parsing failed"})
 
   return(temp_df)
 }
@@ -192,8 +203,7 @@ plot_hmap <- function (cor_mat,
                      ...)
 }
 
-# load object, check if seurat or sce
-# check_obj <- function(obj, string) {
-#   if ()
-# }
+
+
+
 

@@ -12,6 +12,7 @@ server <- function(input, output, session) {
   rv$ref_link <- NULL
   rv$res_visited <- 0
   rv$obj <- NULL
+  rv$links2 <- data.frame()
 
   # waiter checkpoints
   w1 <- Waiter$new(
@@ -443,7 +444,7 @@ server <- function(input, output, session) {
     if (input$metadataCellType == "") {
       return(NULL)
     }
-
+    tmp_mat <- dataClustify()
     # could expose as an option
     cutoff_to_display <- 0.5
 
@@ -484,8 +485,8 @@ server <- function(input, output, session) {
     input$example,
     {
       message("loading prepackaged data")
-      rv$matrixloc <- list(datapath = "../data/example-input/matrix.csv")
-      rv$metaloc <- list(datapath = "../data/example-input/meta-data.csv")
+      rv$matrixloc <- list(datapath = "data/example-input/matrix.csv")
+      rv$metaloc <- list(datapath = "data/example-input/meta-data.csv")
       updateTabItems(session, "tabs", "metadataLoad")
     }
   )
@@ -516,18 +517,25 @@ server <- function(input, output, session) {
       rv$lastgeo <- input$geoid
       rv$links <- list_geo(rv$lastgeo)
       message(rv$links)
-      links2 <- cbind(rv$links %>% mutate(size = map(link, get_file_size)) %>% select(-link),
-                      button = sapply(1:nrow(rv$links), make_button("tbl1")),
-                      stringsAsFactors = FALSE) %>%
-        data.table::data.table()
-      links2 <- links2 %>%
-        DT::datatable(options = list(
-          dom = "ftp",
-          searchHighlight = TRUE,
-          paging = TRUE,
-          pageLength = 5,
-          scrollY = FALSE),
-          escape = ncol(links2) - 1, fillContainer = TRUE)
+      if (rv$links != "error_get") {
+        rv$links2 <- rv$links %>% mutate(size = map(link, get_file_size)) %>% select(-link)
+        links2 <- cbind(rv$links2,
+                        button = sapply(1:nrow(rv$links), make_button("tbl1")),
+                        stringsAsFactors = FALSE) %>%
+          data.table::data.table()
+        links2 <- links2 %>%
+          DT::datatable(options = list(
+            dom = "ftp",
+            searchHighlight = TRUE,
+            paging = TRUE,
+            pageLength = 5,
+            scrollY = FALSE),
+            escape = ncol(links2) - 1, fillContainer = TRUE)
+        
+      } else {
+        links2 <- data.frame(rv$links)
+      }
+      
       url <- str_c("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", input$geoid)
       w6$hide()
       showModal(modalDialog(
@@ -617,7 +625,7 @@ server <- function(input, output, session) {
           hr(),
           strong(materialSwitch(
             "issc",
-            "is single cell data",
+            "   is single cell data",
             value = TRUE,
             status = "success",
             right = TRUE,
@@ -626,7 +634,7 @@ server <- function(input, output, session) {
           )),
           strong(materialSwitch(
             "hasmeta",
-            "has metadata",
+            "   has metadata",
             value = TRUE,
             status = "success",
             right = TRUE,
@@ -635,7 +643,7 @@ server <- function(input, output, session) {
           )),
           strong(materialSwitch(
             "hascellcol",
-            "has cell type column in metadata",
+            "   has cell type column in metadata",
             value = TRUE,
             status = "success",
             right = TRUE,
@@ -650,7 +658,7 @@ server <- function(input, output, session) {
     ))
   })
   observeEvent(input$back, {
-    links2 <- cbind(rv$links %>% mutate(size = map(link, get_file_size)) %>% select(-link),
+    links2 <- cbind(rv$links2,
                     button = sapply(1:nrow(rv$links), make_button("tbl1")),
                     stringsAsFactors = FALSE) %>%
       data.table::data.table()

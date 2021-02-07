@@ -1,5 +1,6 @@
 # Define UI for data upload app ----
 ui <- dashboardPage(
+  skin = "green",
   dashboardHeader(title = "clustifyr RShiny app"),
   dashboardSidebar(
     sidebarMenu(
@@ -12,6 +13,7 @@ ui <- dashboardPage(
     )
   ),
   dashboardBody(
+    #shinyDashboardThemes(theme = "flat_red"),
     tabItems(
       tabItem(
         tabName = "dashboard",
@@ -21,7 +23,7 @@ ui <- dashboardPage(
           tags$script(HTML(js2))
         ),
         tags$head(tags$style(HTML('
-            .skin-blue .sidebar .inactiveLink {
+            .skin-green .sidebar .inactiveLink {
                 color: black;
                 opacity : 25%;
             }'
@@ -31,20 +33,20 @@ ui <- dashboardPage(
                            cursor: not-allowed;
                            }")),
         tags$head(tags$style(HTML('
-            .skin-blue .sidebar .doneLink {
-                color: green;
+            .skin-green .sidebar .doneLink {
+                color: blue;
             }'
         ))),
         tags$head(tags$style(HTML('
-            .skin-blue .sidebar .doneLink.active > a {
-                color: green;
-                border-left-color: green;
+            .skin-green .sidebar .doneLink.active > a {
+                color: blue;
+                border-left-color: blue;
             }'
         ))),
         tags$head(tags$style(HTML('
-            .skin-blue .sidebar .doneLink:hover {
-                color: green;
-                border-left-color: green;
+            .skin-green .sidebar .doneLink:hover {
+                color: blue;
+                border-left-color: blue;
             }'
         ))),
 
@@ -148,15 +150,14 @@ ui <- dashboardPage(
                      icon = icon("search")),
 
         actionButton("metadataPopup", "Display Metadata table in popup"),
-        fluidRow(column(12, DTOutput('contents2'))),
-        #DT::dataTableOutput("contents2"), # Metadata table
-        tags$hr(),
-        uiOutput("colclicked"),
-
         h2("Choose column in metadata with cluster information"),
         selectInput("metadataCellType", "Cell Type Metadata Column:",
                     choice = list("")
-        )
+        ),
+        fluidRow(column(12, DTOutput('contents2'))),
+        #DT::dataTableOutput("contents2"), # Metadata table
+        tags$hr(),
+        uiOutput("colclicked")
       ),
       tabItem(
         tabName = "clusterRef",
@@ -200,7 +201,7 @@ ui <- dashboardPage(
             htmlOutput("clustifym")),
         downloadButton("downloadReference", "Download reference matrix"),
         downloadButton("downloadClustify", "Download clustify matrix"),
-        actionButton("uploadClustify", "Upload reference matrix"),
+        # actionButton("uploadClustify", "Upload reference matrix"),
         h2("average matrix"),
         DT::dataTableOutput("reference", height = "300px"), # Reference Matrix
         tags$hr(),
