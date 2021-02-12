@@ -1,4 +1,4 @@
-# Clustifyr Web App
+# Clustifyr Web App <img src="logo.png" align="right">
 The purpose of the Clustifyr Web App is to enable quick benchmarking and clustering of cells in single-cell RNA sequencing experiments through an interactive web interface and application. Users can directly upload their matrix and metadata files generated from single-cell RNA sequencing data and produce useful clustering data tables and visualizations. Using a built in library of references compiled from reference bulk RNA-seq experiments, microarray expression data, single-cell gene signatures, and marker gene lists, users can also conduct analysis of similarities between their novel data and reference data. An additional purpose of the Clustifyr Web App is to make sure that investigators have accurate metadata as part of their NCBI Gene Expression Omnibus (GEO) records. If no metadata is present from a GEO record, the user can directly auto-email the investigator to supply the sufficient metadata.
 
 ## Clustifyr Background
