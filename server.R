@@ -134,7 +134,7 @@ server <- function(input, output, session) {
     }
     
     df1 <- df1 %>% as.data.frame()
-    if (!has_rownames(df1)) {
+    if (!has_rownames(df1) & length(unique(df1[, 1])) == nrow(df1)) {
       rownames(df1) <- df1[, 1]
       df1[, 1] <- NULL
     }
@@ -189,7 +189,7 @@ server <- function(input, output, session) {
     }
     
     df2 <- df2 %>% as.data.frame()
-    if (!has_rownames(df2)) {
+    if (!has_rownames(df2) & length(unique(df2[, 1])) == nrow(df2)) {
       rownames(df2) <- df2[, 1]
       df2[, 1] <- NULL
     }
@@ -234,7 +234,7 @@ server <- function(input, output, session) {
       ))
     }
     
-    if (!has_rownames(df3)) {
+    if (!has_rownames(df3) & length(unique(df3[, 1])) == nrow(df3)) {
       rownames(df3) <- df3[, 1]
       df3[, 1] <- NULL
     }
