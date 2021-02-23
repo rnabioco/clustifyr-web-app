@@ -59,6 +59,8 @@ ui <- dashboardPage(
                      icon = icon("space-shuttle")
         ),
 
+        DT::dataTableOutput("someta", height = "1000px"),
+        
         # Input: Checkbox if file has header ----
         checkboxInput("header", "Header", TRUE),
 
@@ -211,7 +213,6 @@ ui <- dashboardPage(
         h2("cell type results"),
         DT::dataTableOutput("corToCall", height = "300px"),
         tags$hr(),
-        DT::dataTableOutput("someta", height = "1000px"),
         plotOutput("hmap", height = "900px")
       )
     )

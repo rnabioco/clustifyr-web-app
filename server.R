@@ -771,6 +771,14 @@ server <- function(input, output, session) {
   })
   
   output$someta <- DT::renderDataTable({
-    as.data.table(someta %>% select(-geo, -pubmed))
-  }, filter = "top")
+    as.data.table(someta %>% select(-geo, -pubmed, -pubmed_id), rownames = FALSE)
+  }, filter = "top", rownames = FALSE, options = list(columnDefs = list(
+    list(width = '200px', targets = c(0:6)), list(
+    targets = c(3, 4,5),
+    render = JS(
+      "function(data, type, row, meta) {",
+      "return type === 'display' && data.length > 100 ?",
+      "'<span title=\"' + data + '\">' + data.substr(0, 100) + '...</span>' : data;",
+      "}")
+  ))))
 }
