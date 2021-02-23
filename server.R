@@ -1,5 +1,14 @@
 # Define server logic to read selected file ----
 server <- function(input, output, session) {
+  # parse url to direct tab
+  observe({
+    query <- parseQueryString(session$clientData$url_search)
+  
+    if (!is.null(query[['tab']])) {
+      updateTabItems(session, "tabs", query[['tab']])
+    }
+  })
+  
   # reactive file location to make interactivity easier
   rv <- reactiveValues()
   rv$matrixloc <- NULL
@@ -721,6 +730,9 @@ server <- function(input, output, session) {
   # disable menu at load
   addCssClass(selector = "a[data-value='clustifyres']", class = "inactiveLink")
   addCssClass(selector = "ul li:eq(4)", class = "inactiveLink")
+  
+  addCssClass(selector = "a[data-value='blank']", class = "inactiveLink")
+  addCssClass(selector = "ul li:eq(5)", class = "inactiveLink")
 
   # check if data is loaded
   observeEvent((!is.null(data1())) + (!is.null(data2())) + (!is.null(data3())) +
@@ -838,25 +850,6 @@ server <- function(input, output, session) {
                        icon = icon("feather-alt"))
         )
       ))
-      # if (sel$col != 2) {
-      #   checkfile <- c(
-      #     "brain_editing_site_proportions.bed",
-      #     "clusters.feather",
-      #     "combined2.feather",
-      #     "combined3.feather",
-      #     "fc.rds",
-      #     "MAJIQ_dpsi_summary_sig_squirrelBox.tsv.gz",
-      #     "MiPepid_pred.csv",
-      #     "novel_domains.csv",
-      #     "padj_orf.feather",
-      #     "seqs_precal_noG.rds",
-      #     "SmProt_blast.csv",
-      #     "utrs_sq_noG.feather",
-      #     "utrs_sq.feather"
-      #   )[sel$row]
-      #   rv$data_prev <- data_prev[[checkfile]]
-      #   showModal(modalPrev)
-      # }
     }
   })
 }
