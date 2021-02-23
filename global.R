@@ -30,7 +30,8 @@ options(
     dom = "tp",
     paging = TRUE,
     pageLength = 6,
-    scrollX = TRUE
+    scrollX = TRUE,
+    server = TRUE
   )
 )
 
@@ -203,7 +204,41 @@ plot_hmap <- function (cor_mat,
                      ...)
 }
 
-
+# pull in someta
+someta <- readRDS(url("https://github.com/rnabioco/someta/raw/master/inst/extdata/current_geo.rds"))
+someta <- someta[ , ] %>% select(id, organism = org, usable, files = suppfiles, tar_files = tarfiles, geo, pubmed) %>%
+  mutate(files = map_chr(files, function(x) paste0(x, collapse = "; "))) %>% 
+  mutate(tar_files = map_chr(tar_files, function(x) paste0(x, collapse = "; "))) %>% 
+  mutate(files = ifelse(str_length(files) > 0, files, "none")) %>% 
+  mutate(tar_files = ifelse(str_length(tar_files) > 0 & tar_files != "error_parse", tar_files, "none")) %>% 
+  mutate(usable = factor(usable, levels = c("yes", "no"))) %>% 
+  mutate(summary = map_chr(geo, function(x) {
+    g <- tryCatch(x$summary,
+                  error = function(e) return(NULL))
+    if (is.null(g)) {
+      g <- "none"
+    }
+    if (length(g) > 0) {
+      g <- str_c(g, collapse = " ")
+    }
+    g
+  })) %>% 
+  mutate(pubmed_id = map_chr(pubmed, function(x) {
+    g <- tryCatch(x$pmid[1],
+             error = function(e) return(NULL))
+    if (is.null(g)) {
+      g <- "none"
+    }
+    g
+    })) %>% 
+  mutate(pubmed_title = map_chr(pubmed, function(x) {
+    g <- tryCatch(x$title[1],
+                  error = function(e) return(NULL))
+    if (is.null(g)) {
+      g <- "none"
+    }
+    g
+  }))
 
 
 

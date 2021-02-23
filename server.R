@@ -587,6 +587,10 @@ server <- function(input, output, session) {
       previewdata <- previewdata[, 1:min(cols, 100)]
     }
 
+    if (input[["activeTab"]] == "someta") {
+      fullb <- F
+    }
+    
     w7$hide()
     showModal(modalDialog(
       size = "l",
@@ -610,7 +614,7 @@ server <- function(input, output, session) {
     message(rv$loadinglink)
     if (input[["activeTab"]] == "matrixLoad") {
       rv$matrixloc <- list(datapath = rv$loadinglink)
-    } else {
+    } else if (input[["activeTab"]] == "metadataLoad") {
       rv$metaloc <- list(datapath = rv$loadinglink)
     }
     removeModal()
@@ -768,5 +772,91 @@ server <- function(input, output, session) {
   observeEvent(rv$ref_link, {
     runjs(paste0("document.getElementById('ref_linkgo').onclick = function() {
            window.open('", rv$ref_link, "', '_blank');};"))
+  })
+  
+  output$someta <- DT::renderDataTable({
+    as.data.table(someta %>% select(-geo, -pubmed, -pubmed_id), rownames = FALSE)
+  }, filter = "top", selection=list(mode="single", target="row"),
+  rownames = FALSE, options = list(autoWidth = TRUE,
+                                                      columnDefs = list(
+    list(width = '200px', targets = c(0:6)), list(
+    targets = c(3, 4,5),
+    render = JS(
+      "function(data, type, row, meta) {",
+      "return type === 'display' && data.length > 100 ?",
+      "'<span title=\"' + data + '\">' + data.substr(0, 100) + '...</span>' : data;",
+      "}")
+  ))))
+  
+  observeEvent(input$someta_cell_clicked, {
+    if (length(input$someta_cell_clicked) != 0) {
+      sel <- input$someta_cell_clicked
+      rv$lastgeo <- someta$id[sel$row]
+      w6$show()
+      rv$links <- list_geo(rv$lastgeo)
+      message(rv$links)
+      if (rv$links != "error_get") {
+        rv$links2 <- rv$links %>% mutate(size = map(link, get_file_size)) %>% select(-link)
+        links2 <- cbind(rv$links2,
+                        button = sapply(1:nrow(rv$links), make_button("tbl1")),
+                        stringsAsFactors = FALSE) %>%
+          data.table::data.table()
+        links2 <- links2 %>%
+          DT::datatable(options = list(
+            dom = "ftp",
+            searchHighlight = TRUE,
+            paging = TRUE,
+            pageLength = 5,
+            scrollY = FALSE),
+            escape = ncol(links2) - 1, fillContainer = TRUE)
+        
+      } else {
+        links2 <- data.frame(rv$links)
+      }
+      
+      url <- str_c("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", input$geoid)
+      w6$hide()
+      showModal(modalDialog(
+        size = "l",
+        div(id = "modalfiles",
+            DT::renderDataTable(links2)
+        ),
+        easyClose = TRUE,
+        fade = FALSE,
+        footer = tagList(
+          actionButton("geopage", label = "Go to GEO page",
+                       onclick = paste0('window.open("',
+                                        url,
+                                        '", "_blank")'),
+                       icon = icon("link")),
+          actionButton("email", label = "Email author for missing data",
+                       onclick = paste0('location.href="',
+                                        prep_email(rv$lastgeo),
+                                        '"'),
+                       icon = icon("envelope-open-text")),
+          actionButton("sheet", label = "Spot check for someta", 
+                       icon = icon("feather-alt"))
+        )
+      ))
+      # if (sel$col != 2) {
+      #   checkfile <- c(
+      #     "brain_editing_site_proportions.bed",
+      #     "clusters.feather",
+      #     "combined2.feather",
+      #     "combined3.feather",
+      #     "fc.rds",
+      #     "MAJIQ_dpsi_summary_sig_squirrelBox.tsv.gz",
+      #     "MiPepid_pred.csv",
+      #     "novel_domains.csv",
+      #     "padj_orf.feather",
+      #     "seqs_precal_noG.rds",
+      #     "SmProt_blast.csv",
+      #     "utrs_sq_noG.feather",
+      #     "utrs_sq.feather"
+      #   )[sel$row]
+      #   rv$data_prev <- data_prev[[checkfile]]
+      #   showModal(modalPrev)
+      # }
+    }
   })
 }
