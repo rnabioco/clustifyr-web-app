@@ -10,6 +10,7 @@ ui <- dashboardPage(
       menuItem("Load Metadata", tabName = "metadataLoad", icon = icon("list")),
       menuItem("Load Reference", tabName = "clusterRef", icon = icon("database")),
       menuItem("Cell type inference", tabName = "clustifyres", icon = icon("calculator")),
+      menuItem("", tabName = "blank"),
       menuItem("Explore GEO", tabName = "someta", icon = icon("hdd"))
     )
   ),
