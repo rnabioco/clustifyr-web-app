@@ -31,8 +31,7 @@ options(
     paging = TRUE,
     pageLength = 6,
     scrollX = TRUE,
-    server = TRUE,
-    autoWidth = TRUE
+    server = TRUE
   )
 )
 

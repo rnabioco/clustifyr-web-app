@@ -772,7 +772,8 @@ server <- function(input, output, session) {
   
   output$someta <- DT::renderDataTable({
     as.data.table(someta %>% select(-geo, -pubmed, -pubmed_id), rownames = FALSE)
-  }, filter = "top", rownames = FALSE, options = list(columnDefs = list(
+  }, filter = "top", rownames = FALSE, options = list(autoWidth = TRUE,
+                                                      columnDefs = list(
     list(width = '200px', targets = c(0:6)), list(
     targets = c(3, 4,5),
     render = JS(
