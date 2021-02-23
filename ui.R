@@ -9,7 +9,8 @@ ui <- dashboardPage(
       menuItem("Load Matrix", tabName = "matrixLoad", icon = icon("th")),
       menuItem("Load Metadata", tabName = "metadataLoad", icon = icon("list")),
       menuItem("Load Reference", tabName = "clusterRef", icon = icon("database")),
-      menuItem("Cell type inference", tabName = "clustifyres", icon = icon("calculator"))
+      menuItem("Cell type inference", tabName = "clustifyres", icon = icon("calculator")),
+      menuItem("Explore GEO", tabName = "someta", icon = icon("hdd"))
     )
   ),
   dashboardBody(
@@ -58,8 +59,6 @@ ui <- dashboardPage(
                      "load example data",
                      icon = icon("space-shuttle")
         ),
-
-        DT::dataTableOutput("someta", height = "1000px"),
         
         # Input: Checkbox if file has header ----
         checkboxInput("header", "Header", TRUE),
@@ -214,6 +213,10 @@ ui <- dashboardPage(
         DT::dataTableOutput("corToCall", height = "300px"),
         tags$hr(),
         plotOutput("hmap", height = "900px")
+      ),
+      tabItem(
+        tabName = "someta",
+        DT::dataTableOutput("someta", height = "1000px")
       )
     )
   )
