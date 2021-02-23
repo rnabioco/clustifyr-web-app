@@ -769,4 +769,8 @@ server <- function(input, output, session) {
     runjs(paste0("document.getElementById('ref_linkgo').onclick = function() {
            window.open('", rv$ref_link, "', '_blank');};"))
   })
+  
+  output$someta <- DT::renderDataTable({
+    as.data.table(someta %>% select(-geo, -pubmed))
+  }, filter = "top")
 }

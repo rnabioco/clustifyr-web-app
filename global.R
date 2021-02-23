@@ -203,7 +203,14 @@ plot_hmap <- function (cor_mat,
                      ...)
 }
 
-
+# pull in someta
+someta <- readRDS(url("https://github.com/rnabioco/someta/raw/master/inst/extdata/current_geo.rds"))
+someta <- someta %>% select(id, organism = org, usable, files = suppfiles, tar_files = tarfiles, geo, pubmed) %>%
+  mutate(files = map(files, function(x) paste0(x, collapse = "; "))) %>% 
+  mutate(tar_files = map(tar_files, function(x) paste0(x, collapse = "; "))) %>% 
+  mutate(files = ifelse(str_length(files) > 0, files, "none")) %>% 
+  mutate(tar_files = ifelse(str_length(tar_files) > 0 & tar_files != "error_parse", tar_files, "none")) %>% 
+  mutate(usable = factor(usable, levels = c("yes", "no")))
 
 
 
