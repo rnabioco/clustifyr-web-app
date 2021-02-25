@@ -1,5 +1,6 @@
 # Define UI for data upload app ----
 ui <- dashboardPage(
+  title = "clustifyr app",
   skin = "green",
   dashboardHeader(title = div(tags$a(href='https://github.com/rnabioco/clustifyr',
                                  tags$img(src='logo.png', width="18%")),
@@ -62,14 +63,17 @@ ui <- dashboardPage(
         # waiter stuff ----
         use_waiter(),
 
-        # readme
-        includeMarkdown("README.md"),
-        
         # load example data ----
         actionButton("example",
                      "load example data",
                      icon = icon("space-shuttle")
         ),
+        
+        # Horizontal line ----
+        tags$hr(),
+        
+        # readme
+        includeMarkdown("README.md"),
         
         # Input: Checkbox if file has header ----
         checkboxInput("header", "Header", TRUE),
@@ -132,7 +136,7 @@ ui <- dashboardPage(
 
         # GEO id load ----
         actionButton("geo1",
-                     "from GEO id",
+                     "or from GEO id",
                      icon = icon("search")),
 
         actionButton("matrixPopup", "Display UMI Matrix in popup"),
@@ -158,7 +162,7 @@ ui <- dashboardPage(
 
         # GEO id load ----
         actionButton("geo2",
-                     "from GEO id",
+                     "or from GEO id",
                      icon = icon("search")),
 
         actionButton("metadataPopup", "Display Metadata table in popup"),
@@ -211,8 +215,8 @@ ui <- dashboardPage(
             status = "info",
             title = "clustifyr messages",
             htmlOutput("clustifym")),
-        downloadButton("downloadReference", "Download reference matrix"),
-        downloadButton("downloadClustify", "Download clustify matrix"),
+        downloadButton("downloadReference", "Download average expression matrix"),
+        downloadButton("downloadClustify", "Download clustify results matrices"),
         # actionButton("uploadClustify", "Upload reference matrix"),
         h2("average matrix"),
         DT::dataTableOutput("reference", height = "300px"), # Reference Matrix
