@@ -1,8 +1,15 @@
 # Define UI for data upload app ----
 ui <- dashboardPage(
   skin = "green",
-  dashboardHeader(title = "clustifyr RShiny app"),
+  dashboardHeader(title = div(tags$a(href='https://github.com/rnabioco/clustifyr',
+                                 tags$img(src='logo.png', width="18%")),
+                                 "clustifyr Shiny app")),
   dashboardSidebar(
+    # tags$img(
+    #   src = 'logo.png',
+    #   width = "1000%",
+    #   style = 'position: fixed; bottom: 0;right: 0;'
+    # ),
     sidebarMenu(
       id = "tabs",
       menuItem("Dashboard", tabName = "dashboard", icon = icon("dashboard")),
@@ -15,7 +22,7 @@ ui <- dashboardPage(
     )
   ),
   dashboardBody(
-    #shinyDashboardThemes(theme = "flat_red"),
+    shinyDashboardThemes(theme = "poor_mans_flatly"),
     tabItems(
       tabItem(
         tabName = "dashboard",
@@ -36,25 +43,28 @@ ui <- dashboardPage(
                            }")),
         tags$head(tags$style(HTML('
             .skin-green .sidebar .doneLink {
-                color: blue;
+                color: green;
             }'
         ))),
         tags$head(tags$style(HTML('
             .skin-green .sidebar .doneLink.active > a {
-                color: blue;
-                border-left-color: blue;
+                color: green;
+                border-left-color: green;
             }'
         ))),
         tags$head(tags$style(HTML('
             .skin-green .sidebar .doneLink:hover {
-                color: blue;
-                border-left-color: blue;
+                color: green;
+                border-left-color: green;
             }'
         ))),
 
         # waiter stuff ----
         use_waiter(),
 
+        # readme
+        includeMarkdown("README.md"),
+        
         # load example data ----
         actionButton("example",
                      "load example data",
@@ -217,6 +227,7 @@ ui <- dashboardPage(
       ),
       tabItem(
         tabName = "someta",
+        h2("GEO scRNA-seq records, hover to see full, click to preview files"),
         DT::dataTableOutput("someta", height = "1000px")
       )
     )
