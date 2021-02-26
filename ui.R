@@ -231,7 +231,7 @@ ui <- dashboardPage(
       ),
       tabItem(
         tabName = "someta",
-        h2("GEO scRNA-seq records, hover to see full, click to preview files"),
+        h2("GEO scRNA-seq records, hover to see truncated text, click to preview files"),
         DT::dataTableOutput("someta", height = "1000px")
       )
     )
