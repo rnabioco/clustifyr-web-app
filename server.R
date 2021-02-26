@@ -23,6 +23,15 @@ server <- function(input, output, session) {
   rv$obj <- NULL
   rv$links2 <- data.frame()
 
+  # hide some elements
+  hide("header")
+  hide("sepMat")
+  hide("sepMeta")
+  hide("dispMat")
+  hide("dispMeta")
+  hide("matrixPopup")
+  hide("metadataPopup")
+
   # waiter checkpoints
   w1 <- Waiter$new(
     id = "contents1",
