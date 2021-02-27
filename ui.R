@@ -239,6 +239,7 @@ ui <- dashboardPage(
           downloadButton("downloadClustify", "Download clustify results matrices") %>% 
             bs_embed_tooltip("Cell type inference as sheet1, correlation matrix as sheet2, of xlsx", "bottom")
         ),
+        tags$hr(),
         # actionButton("uploadClustify", "Upload reference matrix"),
         h2("Average Expression Matrix"),
         DT::dataTableOutput("reference", height = "300px"), # Reference Matrix
