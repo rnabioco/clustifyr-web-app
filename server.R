@@ -100,6 +100,15 @@ server <- function(input, output, session) {
       h4("")
     )
   )
+  
+  w9 <- Waiter$new(
+    id = "someta",
+    html = tagList(
+      spin_flower(),
+      h4("Preview loading..."),
+      h4("")
+    )
+  )
 
   data1 <- reactive({
     
@@ -318,9 +327,10 @@ server <- function(input, output, session) {
   })
 
   output$ref_summary <- renderUI({
-    HTML(paste0("cell types: ", ncol(data3()),
+    HTML(paste0("<b>", "cell types: ", ncol(data3()),
                 "<br>",
-                "genes: ", nrow(data3())))
+                "genes: ", nrow(data3()),
+                "<b>"))
   })
 
   data3b <- reactive({
@@ -813,7 +823,7 @@ server <- function(input, output, session) {
     if (length(input$someta_cell_clicked) != 0) {
       sel <- input$someta_cell_clicked
       rv$lastgeo <- someta$id[sel$row]
-      w6$show()
+      w9$show()
       rv$links <- list_geo(rv$lastgeo)
       message(rv$links)
       if (rv$links != "error_get") {
@@ -836,7 +846,7 @@ server <- function(input, output, session) {
       }
       
       url <- str_c("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", input$geoid)
-      w6$hide()
+      w9$hide()
       showModal(modalDialog(
         size = "l",
         div(id = "modalfiles",
