@@ -822,9 +822,9 @@ server <- function(input, output, session) {
   observeEvent(input$someta_cell_clicked, {
     if (length(input$someta_cell_clicked) != 0) {
       sel <- input$someta_cell_clicked
-      rv$lastgeo <- someta$id[sel$row]
+      rv$lastgeo <<- someta$id[sel$row]
       w9$show()
-      rv$links <- list_geo(rv$lastgeo)
+      rv$links <<- list_geo(rv$lastgeo)
       message(rv$links)
       if (rv$links != "error_get") {
         rv$links2 <- rv$links %>% mutate(size = map(link, get_file_size)) %>% select(-link)
@@ -845,7 +845,7 @@ server <- function(input, output, session) {
         links2 <- data.frame(rv$links)
       }
       
-      url <- str_c("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", input$geoid)
+      url <- str_c("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", rv$lastgeo)
       w9$hide()
       showModal(modalDialog(
         size = "l",
